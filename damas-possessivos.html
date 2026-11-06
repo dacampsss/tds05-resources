@@ -257,8 +257,12 @@
 
         <ul class="text-sm font-bold text-slate-800 space-y-2">
           <li class="flex items-start gap-2">
+            <span class="text-base">🔄</span>
+            <span><strong>Backward Captures:</strong> Regular pieces can capture both <em>forward & backward</em>!</span>
+          </li>
+          <li class="flex items-start gap-2">
             <span class="text-base">👑</span>
-            <span><strong>KING PROMOTION:</strong> Reaching the back row turns your piece into a KING! A KING can move in all 4 diagonal directions and capture <em>ANY</em> opponent piece!</span>
+            <span><strong>FLYING KING (Dama Voadora):</strong> A King moves & jumps long distances across any open diagonal line!</span>
           </li>
         </ul>
       </div>
@@ -508,26 +512,71 @@
       const piece = boardState[r][c];
       if (!piece) return;
 
-      const directions = piece.isKing 
-        ? [[-1, -1], [-1, 1], [1, -1], [1, 1]]
-        : (piece.player === 1 ? [[-1, -1], [-1, 1]] : [[1, -1], [1, 1]]);
+      const allDirections = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
 
-      for (let [dr, dc] of directions) {
-        let nr = r + dr;
-        let nc = c + dc;
+      if (piece.isKing) {
+        // --- FLYING KING LOGIC (LONG RANGE MOVEMENT & CAPTURES) ---
+        for (let [dr, dc] of allDirections) {
+          let step = 1;
+          let enemyFound = null;
 
-        if (isValidPos(nr, nc)) {
-          // Regular Move (empty cell) - only if not restricted to captures
-          if (!capturesOnly && !boardState[nr][nc]) {
-            validMoves.push({ r: nr, c: nc, capture: null });
-          } 
-          // Capture Move Attempt
-          else if (boardState[nr][nc] && boardState[nr][nc].player !== piece.player) {
+          while (true) {
+            let nr = r + dr * step;
+            let nc = c + dc * step;
+
+            if (!isValidPos(nr, nc)) break;
+            const target = boardState[nr][nc];
+
+            if (!enemyFound) {
+              if (!target) {
+                if (!capturesOnly) {
+                  validMoves.push({ r: nr, c: nc, capture: null });
+                }
+              } else if (target.player !== piece.player) {
+                // King can capture ANY enemy piece
+                enemyFound = { r: nr, c: nc, type: target.type };
+              } else {
+                // Friendly piece blocks diagonal line
+                break;
+              }
+            } else {
+              // We already found an enemy piece along this ray
+              if (!target) {
+                // Valid landing cell past the enemy
+                validMoves.push({ r: nr, c: nc, capture: enemyFound });
+              } else {
+                // Second piece blocks landing
+                break;
+              }
+            }
+            step++;
+          }
+        }
+      } else {
+        // --- REGULAR PIECE LOGIC ---
+        // Forward directions for normal steps
+        const forwardDirs = (piece.player === 1) ? [[-1, -1], [-1, 1]] : [[1, -1], [1, 1]];
+
+        // 1. Regular forward non-capturing steps (if not restricted to captures)
+        if (!capturesOnly) {
+          for (let [dr, dc] of forwardDirs) {
+            let nr = r + dr;
+            let nc = c + dc;
+            if (isValidPos(nr, nc) && !boardState[nr][nc]) {
+              validMoves.push({ r: nr, c: nc, capture: null });
+            }
+          }
+        }
+
+        // 2. Captures in ALL 4 directions (Forward & Backward)
+        for (let [dr, dc] of allDirections) {
+          let nr = r + dr;
+          let nc = c + dc;
+
+          if (isValidPos(nr, nc) && boardState[nr][nc] && boardState[nr][nc].player !== piece.player) {
             const targetPiece = boardState[nr][nc];
-            // King captures ANY, Regular piece only captures grammatical MATCH
-            const canCapture = piece.isKing || (MATCHES[piece.type] === targetPiece.type);
-
-            if (canCapture) {
+            // Check grammatical match (SHE captures HER, etc.)
+            if (MATCHES[piece.type] === targetPiece.type) {
               let landingR = nr + dr;
               let landingC = nc + dc;
               if (isValidPos(landingR, landingC) && !boardState[landingR][landingC]) {
