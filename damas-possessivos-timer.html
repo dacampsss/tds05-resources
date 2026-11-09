@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grammar Checkers - Comic Edition</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Comic Neue', cursive, sans-serif;
+      background-color: #fef9c3;
+      background-image: radial-gradient(#cbd5e1 1.5px, transparent 1.5px);
+      background-size: 16px 16px;
+    }
+    .font-bangers {
+      font-family: 'Bangers', cursive;
+      letter-spacing: 1.5px;
+    }
+    .comic-border {
+      border: 3.5px solid #000000;
+      box-shadow: 5px 5px 0px #000000;
+    }
+    .comic-border-sm {
+      border: 2.5px solid #000000;
+      box-shadow: 3px 3px 0px #000000;
+    }
+    .comic-btn {
+      transition: all 0.1s ease;
+    }
+    .comic-btn:active {
+      transform: translate(3px, 3px);
+      box-shadow: 0px 0px 0px #000000;
+    }
+    .board-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      grid-template-rows: repeat(8, 1fr);
+      aspect-ratio: 1 / 1;
+    }
+    .cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .cell-dark {
+      background-color: #fb923c;
+      background-image: radial-gradient(#ea580c 20%, transparent 20%);
+      background-size: 8px 8px;
+    }
+    .cell-light {
+      background-color: #fef3c7;
+    }
+    .cell.highlight {
+      background-color: #facc15 !important;
+      cursor: pointer;
+    }
+    .cell.highlight::after {
+      content: '';
+      width: 18px;
+      height: 18px;
+      background-color: #22c55e;
+      border: 2px solid black;
+      border-radius: 50%;
+      box-shadow: 2px 2px 0px black;
+    }
+    .cell.highlight-capture::after {
+      background-color: #ef4444;
+      width: 22px;
+      height: 22px;
+    }
+    .piece {
+      width: 82%;
+      height: 82%;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Bangers', cursive;
+      font-size: 1.1rem;
+      border: 3px solid #000000;
+      box-shadow: 3px 3px 0px #000000;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      position: relative;
+      z-index: 10;
+    }
+    @media (min-width: 640px) {
+      .piece {
+        font-size: 1.35rem;
+      }
+    }
+    .piece:hover {
+      transform: scale(1.1) rotate(-3deg);
+    }
+    .piece-team1 {
+      background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+      color: #ffffff;
+      text-shadow: 1.5px 1.5px 0px #000;
+    }
+    .piece-team2 {
+      background: linear-gradient(135deg, #4ade80 0%, #16a34a 100%);
+      color: #ffffff;
+      text-shadow: 1.5px 1.5px 0px #000;
+    }
+    .piece.selected {
+      outline: 4px dashed #000000;
+      outline-offset: 2px;
+      transform: scale(1.15) rotate(4deg);
+      box-shadow: 5px 5px 0px #000;
+    }
+    .piece.king::after {
+      content: '👑';
+      position: absolute;
+      top: -8px;
+      right: -6px;
+      font-size: 18px;
+      filter: drop-shadow(2px 2px 0px #000);
+    }
+    @keyframes comicPop {
+      0% { transform: scale(0) rotate(-15deg); opacity: 0; }
+      50% { transform: scale(1.2) rotate(5deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 0; }
+    }
+    .comic-pop {
+      animation: comicPop 0.9s forwards ease-out;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-between p-3 sm:p-6">
+
+  <!-- Floating Comic Overlay FX Container -->
+  <div id="pop-fx-container" class="fixed inset-0 pointer-events-none z-50 flex items-center justify-center"></div>
+
+  <!-- Header Banner -->
+  <header class="w-full max-w-4xl mb-4 text-center">
+    <div class="bg-amber-400 comic-border p-3 sm:p-4 inline-block transform -rotate-1 relative">
+      <div class="absolute -top-3 -left-3 bg-red-500 text-white font-bangers px-3 py-1 text-sm sm:text-base comic-border-sm transform -rotate-6">
+        2-PLAYER PC GAME
+      </div>
+      <h1 class="text-3xl sm:text-5xl font-bangers text-black tracking-wider uppercase drop-shadow">
+        ⚔️ GRAMMAR CHECKERS ⚔️
+      </h1>
+      <p class="text-xs sm:text-sm font-bold text-slate-900 uppercase tracking-widest mt-1">
+        SUBJECTS vs. POSSESSIVES — EDITION DE TI & GRAMÁTICA
+      </p>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="w-full max-w-4xl flex flex-col lg:flex-row items-center lg:items-start justify-center gap-6">
+    <!-- Board Area -->
+    <div class="flex flex-col items-center w-full max-w-[500px]">
+      <!-- Status Bar -->
+      <div id="status-card" class="w-full bg-white comic-border p-3 mb-4 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">📢</span>
+          <div>
+            <div class="text-xs text-gray-500 font-bold uppercase flex items-center gap-2">
+              <span>CURRENT TURN</span>
+              <span id="no-capture-counter" class="bg-amber-200 text-black px-1.5 py-0.2 text-[10px] rounded border border-black font-bold">
+                Moves without capture: 0/20
+              </span>
+            </div>
+            <div id="player-turn-text" class="text-xl sm:text-2xl font-bangers text-sky-600">
+              PLAYER 1 (SHE / HE / IT)
+            </div>
+          </div>
+        </div>
+        <button onclick="resetGame()" class="bg-red-400 hover:bg-red-500 text-black font-bangers px-3 py-1.5 text-base comic-border-sm comic-btn">
+          RESET 🔄
+        </button>
+      </div>
+
+      <!-- Checkers Board -->
+      <div class="w-full bg-black p-2 comic-border">
+        <div id="board" class="board-grid w-full"></div>
+      </div>
+
+      <!-- Scoreboard with Timers -->
+      <div class="w-full flex justify-between gap-4 mt-4">
+        <div id="p1-card" class="flex-1 bg-sky-100 comic-border-sm p-2 text-center transition-all">
+          <div class="font-bangers text-sky-700 text-lg">P1: SHE / HE / IT</div>
+          <div class="text-sm font-bold">Captured: <span id="p1-score" class="text-xl font-bangers text-sky-800">0</span></div>
+          <div id="p1-timer-container" class="mt-1 hidden text-xs font-bold bg-sky-300 border border-black py-0.5 rounded">
+            ⏱️ <span id="p1-timer-text">07:00</span>
+          </div>
+        </div>
+        <div id="p2-card" class="flex-1 bg-green-100 comic-border-sm p-2 text-center transition-all">
+          <div class="font-bangers text-green-700 text-lg">P2: HER / HIS / ITS</div>
+          <div class="text-sm font-bold">Captured: <span id="p2-score" class="text-xl font-bangers text-green-800">0</span></div>
+          <div id="p2-timer-container" class="mt-1 hidden text-xs font-bold bg-green-300 border border-black py-0.5 rounded">
+            ⏱️ <span id="p2-timer-text">07:00</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Side Rule Panel & Helper -->
+    <div class="w-full max-w-[340px] flex flex-col gap-4">
+      
+      <!-- Timer Controls Box -->
+      <div class="bg-amber-100 comic-border p-3 text-xs font-bold">
+        <div class="font-bangers text-lg text-slate-900 mb-2 border-b-2 border-black pb-1 flex justify-between items-center">
+          <span>⏱️ TIMER CONFIG</span>
+          <button id="timer-toggle-btn" onclick="toggleTimerSystem()" class="bg-red-300 text-black font-bangers px-2 py-0.5 text-xs comic-border-sm comic-btn">
+            OFF
+          </button>
+        </div>
+        <div id="timer-settings" class="space-y-2 opacity-50 pointer-events-none transition-opacity">
+          <div class="flex justify-between items-center">
+            <label for="timer-mode-select">Mode:</label>
+            <select id="timer-mode-select" onchange="changeTimerMode()" class="bg-white border-2 border-black px-1 rounded font-bold">
+              <option value="bank">7 Min Bank (Each)</option>
+              <option value="custom">Custom per Turn</option>
+            </select>
+          </div>
+          <div id="custom-time-row" class="hidden flex justify-between items-center">
+            <label for="custom-seconds">Seconds/Turn:</label>
+            <input type="number" id="custom-seconds" value="60" min="5" max="300" class="w-16 bg-white border-2 border-black px-1 text-center rounded font-bold">
+          </div>
+        </div>
+      </div>
+
+      <!-- Rules Box -->
+      <div class="bg-white comic-border p-4 relative">
+        <div class="absolute -top-3 right-4 bg-yellow-300 text-black font-bangers px-2 py-0.5 text-xs comic-border-sm">
+          HOW TO PLAY
+        </div>
+        <h3 class="font-bangers text-2xl text-slate-800 mb-2 border-b-2 border-black pb-1">
+          🎯 RULE BOOK
+        </h3>
+        <ul class="text-sm font-bold text-slate-800 space-y-2.5">
+          <li class="flex items-start gap-2">
+            <span class="text-base">1️⃣</span>
+            <span><strong>Movement:</strong> Walk 1 diagonal step forward onto dark squares.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-base">2️⃣</span>
+            <span><strong>Grammar Match Captures:</strong> A piece can only capture its exact grammatical pair!</span>
+          </li>
+        </ul>
+
+        <!-- Pairs Table -->
+        <div class="my-3 bg-amber-50 p-2.5 comic-border-sm space-y-1.5 text-xs font-bold">
+          <div class="flex justify-between items-center bg-sky-200 px-2 py-1 rounded border border-black">
+            <span>🔵 SHE</span> <span>➔ captures ➔</span> <span>🟢 HER</span>
+          </div>
+          <div class="flex justify-between items-center bg-sky-200 px-2 py-1 rounded border border-black">
+            <span>🔵 HE</span> <span>➔ captures ➔</span> <span>🟢 HIS</span>
+          </div>
+          <div class="flex justify-between items-center bg-sky-200 px-2 py-1 rounded border border-black">
+            <span>🔵 IT</span> <span>➔ captures ➔</span> <span>🟢 ITS</span>
+          </div>
+        </div>
+
+        <ul class="text-sm font-bold text-slate-800 space-y-2">
+          <li class="flex items-start gap-2">
+            <span class="text-base">🔄</span>
+            <span><strong>Backward Captures:</strong> Regular pieces can capture both <em>forward & backward</em>!</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-base">👑</span>
+            <span><strong>FLYING KING (Dama Voadora):</strong> A King moves & jumps long distances across any open diagonal line!</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Quick Audio Toggle -->
+      <div class="bg-amber-200 comic-border-sm p-3 flex items-center justify-between">
+        <span class="font-bangers text-lg text-black">SFX SOUNDS</span>
+        <button id="sound-btn" onclick="toggleSound()" class="bg-white font-bangers px-3 py-1 text-sm comic-border-sm comic-btn">
+          🔊 SOUND: ON
+        </button>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="mt-6 text-center text-xs font-bold text-slate-700">
+    Inglês Instrumental para TI — Practical Grammar Checkers Game
+  </footer>
+
+  <!-- Game Over Comic Modal -->
+  <div id="game-over-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-amber-300 comic-border p-6 max-w-sm w-full text-center transform rotate-1 relative">
+      <div class="absolute -top-5 left-1/2 -translate-x-1/2 bg-red-600 text-white font-bangers px-4 py-1 text-2xl comic-border-sm transform -rotate-3">
+        GAME OVER!
+      </div>
+      <div id="game-over-icon" class="text-6xl mt-4 mb-2">🏆</div>
+      <h2 id="game-over-title" class="font-bangers text-3xl text-black mb-2">PLAYER 1 WINS!</h2>
+      <p id="game-over-desc" class="text-sm font-bold text-slate-800 mb-5">Player 2 has no valid moves remaining.</p>
+      <button onclick="closeModalAndReset()" class="bg-green-400 hover:bg-green-500 text-black font-bangers px-6 py-2 text-xl comic-border-sm comic-btn w-full">
+        PLAY AGAIN 🎮
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const BOARD_SIZE = 8;
+    const boardEl = document.getElementById('board');
+    const playerTurnText = document.getElementById('player-turn-text');
+    const p1ScoreEl = document.getElementById('p1-score');
+    const p2ScoreEl = document.getElementById('p2-score');
+    const noCaptureCounterEl = document.getElementById('no-capture-counter');
+
+    let boardState = Array(8).fill(null).map(() => Array(8).fill(null));
+    let currentPlayer = 1;
+    let selectedPiece = null;
+    let validMoves = [];
+    let p1Captured = 0;
+    let p2Captured = 0;
+    let movesWithoutCapture = 0;
+    let isChainCapturing = false;
+    let comboStreak = 0;
+    let soundEnabled = true;
+
+    // Timer Variables
+    let timerEnabled = false;
+    let timerMode = 'bank';
+    let p1Time = 420;
+    let p2Time = 420;
+    let customTurnSeconds = 60;
+    let timerInterval = null;
+
+    const MATCHES = {
+      'SHE': 'HER', 'HE': 'HIS', 'IT': 'ITS',
+      'HER': 'SHE', 'HIS': 'HE', 'ITS': 'IT'
+    };
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playSound(type) {
+      if (!soundEnabled) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'select') {
+          osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+          gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.05);
+        } else if (type === 'move') {
+          osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(500, audioCtx.currentTime + 0.08);
+          gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.08);
+        } else if (type === 'capture') {
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+          osc.frequency.setValueAtTime(600, audioCtx.currentTime + 0.06);
+          gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.15);
+        } else if (type === 'king') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+          osc.frequency.setValueAtTime(600, audioCtx.currentTime + 0.1);
+          osc.frequency.setValueAtTime(850, audioCtx.currentTime + 0.2);
+          gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.35);
+        } else if (type === 'gameover') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+          osc.frequency.linearRampToValueAtTime(150, audioCtx.currentTime + 0.4);
+          gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.4);
+        }
+      } catch (e) {}
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      document.getElementById('sound-btn').innerText = soundEnabled ? '🔊 SOUND: ON' : '🔇 SOUND: OFF';
+    }
+
+    function toggleTimerSystem() {
+      timerEnabled = !timerEnabled;
+      const btn = document.getElementById('timer-toggle-btn');
+      const settings = document.getElementById('timer-settings');
+
+      if (timerEnabled) {
+        btn.innerText = 'ON';
+        btn.className = 'bg-green-400 text-black font-bangers px-2 py-0.5 text-xs comic-border-sm comic-btn';
+        settings.classList.remove('opacity-50', 'pointer-events-none');
+        document.getElementById('p1-timer-container').classList.remove('hidden');
+        document.getElementById('p2-timer-container').classList.remove('hidden');
+      } else {
+        btn.innerText = 'OFF';
+        btn.className = 'bg-red-300 text-black font-bangers px-2 py-0.5 text-xs comic-border-sm comic-btn';
+        settings.classList.add('opacity-50', 'pointer-events-none');
+        document.getElementById('p1-timer-container').classList.add('hidden');
+        document.getElementById('p2-timer-container').classList.add('hidden');
+        stopTimer();
+      }
+      resetGame();
+    }
+
+    function changeTimerMode() {
+      timerMode = document.getElementById('timer-mode-select').value;
+      const customRow = document.getElementById('custom-time-row');
+      if (timerMode === 'custom') {
+        customRow.classList.remove('hidden');
+      } else {
+        customRow.classList.add('hidden');
+      }
+      resetGame();
+    }
+
+    function startTimer() {
+      stopTimer();
+      if (!timerEnabled) return;
+
+      if (timerMode === 'custom') {
+        customTurnSeconds = parseInt(document.getElementById('custom-seconds').value) || 60;
+        p1Time = customTurnSeconds;
+        p2Time = customTurnSeconds;
+      }
+
+      timerInterval = setInterval(() => {
+        if (currentPlayer === 1) {
+          p1Time--;
+          if (p1Time <= 0) {
+            stopTimer();
+            showGameOver('PLAYER 2 WINS!', "Player 1's time ran out!", '⏳');
+          }
+        } else {
+          p2Time--;
+          if (p2Time <= 0) {
+            stopTimer();
+            showGameOver('PLAYER 1 WINS!', "Player 2's time ran out!", '⏳');
+          }
+        }
+        updateTimersDisplay();
+      }, 1000);
+    }
+
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+
+    function switchTimerTurn() {
+      if (!timerEnabled) return;
+      if (timerMode === 'custom') {
+        p1Time = customTurnSeconds;
+        p2Time = customTurnSeconds;
+      }
+      startTimer();
+    }
+
+    function updateTimersDisplay() {
+      document.getElementById('p1-timer-text').innerText = formatTime(p1Time);
+      document.getElementById('p2-timer-text').innerText = formatTime(p2Time);
+
+      if (currentPlayer === 1) {
+        document.getElementById('p1-card').style.borderWidth = '3.5px';
+        document.getElementById('p2-card').style.borderWidth = '2.5px';
+      } else {
+        document.getElementById('p2-card').style.borderWidth = '3.5px';
+        document.getElementById('p1-card').style.borderWidth = '2.5px';
+      }
+    }
+
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function initGame() {
+      stopTimer();
+      boardState = Array(8).fill(null).map(() => Array(8).fill(null));
+      const p1Types = ['SHE', 'HE', 'IT'];
+      const p2Types = ['HER', 'HIS', 'ITS'];
+      let p1Idx = 0, p2Idx = 0;
+
+      for (let r = 0; r < BOARD_SIZE; r++) {
+        for (let c = 0; c < BOARD_SIZE; c++) {
+          if ((r + c) % 2 === 1) {
+            if (r < 3) {
+              boardState[r][c] = { player: 2, type: p2Types[p2Idx % 3], isKing: false };
+              p2Idx++;
+            } else if (r > 4) {
+              boardState[r][c] = { player: 1, type: p1Types[p1Idx % 3], isKing: false };
+              p1Idx++;
+            }
+          }
+        }
+      }
+
+      currentPlayer = 1;
+      p1Captured = 0;
+      p2Captured = 0;
+      movesWithoutCapture = 0;
+      isChainCapturing = false;
+      comboStreak = 0;
+      selectedPiece = null;
+      validMoves = [];
+
+      p1Time = 420;
+      p2Time = 420;
+
+      if (timerMode === 'custom') {
+        customTurnSeconds = parseInt(document.getElementById('custom-seconds').value) || 60;
+        p1Time = customTurnSeconds;
+        p2Time = customTurnSeconds;
+      }
+
+      document.getElementById('game-over-modal').classList.add('hidden');
+      updateUI();
+      renderBoard();
+
+      if (timerEnabled) {
+        startTimer();
+      }
+    }
+
+    function resetGame() {
+      initGame();
+      triggerComicPop('GAME RESET!', '#f59e0b');
+    }
+
+    function closeModalAndReset() {
+      document.getElementById('game-over-modal').classList.add('hidden');
+      initGame();
+    }
+
+    function updateUI() {
+      p1ScoreEl.innerText = p1Captured;
+      p2ScoreEl.innerText = p2Captured;
+      noCaptureCounterEl.innerText = `Moves without capture: ${movesWithoutCapture}/20`;
+
+      if (currentPlayer === 1) {
+        playerTurnText.innerText = isChainCapturing ? 'PLAYER 1 (CHAIN COMBO!)' : 'PLAYER 1 (SHE / HE / IT)';
+        playerTurnText.className = 'text-xl sm:text-2xl font-bangers text-sky-600';
+      } else {
+        playerTurnText.innerText = isChainCapturing ? 'PLAYER 2 (CHAIN COMBO!)' : 'PLAYER 2 (HER / HIS / ITS)';
+        playerTurnText.className = 'text-xl sm:text-2xl font-bangers text-green-600';
+      }
+
+      if (timerEnabled) {
+        updateTimersDisplay();
+      }
+    }
+
+    function renderBoard() {
+      boardEl.innerHTML = '';
+      for (let r = 0; r < BOARD_SIZE; r++) {
+        for (let c = 0; c < BOARD_SIZE; c++) {
+          const cell = document.createElement('div');
+          const isDark = (r + c) % 2 === 1;
+          cell.className = `cell ${isDark ? 'cell-dark' : 'cell-light'}`;
+          cell.dataset.row = r;
+          cell.dataset.col = c;
+
+          const piece = boardState[r][c];
+          if (piece) {
+            const pieceEl = document.createElement('div');
+            pieceEl.className = `piece piece-team${piece.player} ${piece.isKing ? 'king' : ''}`;
+            if (selectedPiece && selectedPiece.row === r && selectedPiece.col === c) {
+              pieceEl.classList.add('selected');
+            }
+            pieceEl.innerText = piece.type;
+            cell.appendChild(pieceEl);
+          }
+
+          const moveOption = validMoves.find(m => m.r === r && m.c === c);
+          if (moveOption) {
+            cell.classList.add('highlight');
+            if (moveOption.capture) {
+              cell.classList.add('highlight-capture');
+            }
+          }
+
+          cell.addEventListener('click', () => handleCellClick(r, c));
+          boardEl.appendChild(cell);
+        }
+      }
+    }
+
+    function handleCellClick(r, c) {
+      const piece = boardState[r][c];
+
+      if (isChainCapturing) {
+        if (selectedPiece) {
+          const move = validMoves.find(m => m.r === r && m.c === c);
+          if (move) {
+            executeMove(selectedPiece, move);
+          }
+        }
+        return;
+      }
+
+      if (piece && piece.player === currentPlayer) {
+        selectedPiece = { row: r, col: c, ...piece };
+        calculateValidMoves(r, c);
+        playSound('select');
+        renderBoard();
+        return;
+      }
+
+      if (selectedPiece) {
+        const move = validMoves.find(m => m.r === r && m.c === c);
+        if (move) {
+          executeMove(selectedPiece, move);
+          return;
+        }
+      }
+
+      selectedPiece = null;
+      validMoves = [];
+      renderBoard();
+    }
+
+    function calculateValidMoves(r, c, capturesOnly = false) {
+      validMoves = [];
+      const piece = boardState[r][c];
+      if (!piece) return;
+
+      const allDirections = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+
+      if (piece.isKing) {
+        for (let [dr, dc] of allDirections) {
+          let step = 1;
+          let enemyFound = null;
+
+          while (true) {
+            let nr = r + dr * step;
+            let nc = c + dc * step;
+
+            if (!isValidPos(nr, nc)) break;
+            const target = boardState[nr][nc];
+
+            if (!enemyFound) {
+              if (!target) {
+                if (!capturesOnly) {
+                  validMoves.push({ r: nr, c: nc, capture: null });
+                }
+              } else if (target.player !== piece.player) {
+                enemyFound = { r: nr, c: nc, type: target.type };
+              } else {
+                break;
+              }
+            } else {
+              if (!target) {
+                validMoves.push({ r: nr, c: nc, capture: enemyFound });
+              } else {
+                break;
+              }
+            }
+            step++;
+          }
+        }
+      } else {
+        const forwardDirs = (piece.player === 1) ? [[-1, -1], [-1, 1]] : [[1, -1], [1, 1]];
+
+        if (!capturesOnly) {
+          for (let [dr, dc] of forwardDirs) {
+            let nr = r + dr;
+            let nc = c + dc;
+            if (isValidPos(nr, nc) && !boardState[nr][nc]) {
+              validMoves.push({ r: nr, c: nc, capture: null });
+            }
+          }
+        }
+
+        for (let [dr, dc] of allDirections) {
+          let nr = r + dr;
+          let nc = c + dc;
+
+          if (isValidPos(nr, nc) && boardState[nr][nc] && boardState[nr][nc].player !== piece.player) {
+            const targetPiece = boardState[nr][nc];
+            if (MATCHES[piece.type] === targetPiece.type) {
+              let landingR = nr + dr;
+              let landingC = nc + dc;
+              if (isValidPos(landingR, landingC) && !boardState[landingR][landingC]) {
+                validMoves.push({ r: landingR, c: landingC, capture: { r: nr, c: nc, type: targetPiece.type } });
+              }
+            }
+          }
+        }
+      }
+    }
+
+    function hasAnyValidMoves(player) {
+      for (let r = 0; r < BOARD_SIZE; r++) {
+        for (let c = 0; c < BOARD_SIZE; c++) {
+          if (boardState[r][c] && boardState[r][c].player === player) {
+            calculateValidMoves(r, c);
+            if (validMoves.length > 0) {
+              validMoves = [];
+              return true;
+            }
+          }
+        }
+      }
+      validMoves = [];
+      return false;
+    }
+
+    function executeMove(from, move) {
+      const piece = boardState[from.row][from.col];
+      boardState[move.r][move.c] = piece;
+      boardState[from.row][from.col] = null;
+
+      let captured = false;
+      if (move.capture) {
+        boardState[move.capture.r][move.capture.c] = null;
+        captured = true;
+        movesWithoutCapture = 0;
+        comboStreak++;
+
+        if (currentPlayer === 1) p1Captured++; else p2Captured++;
+        playSound('capture');
+        const comboLabel = comboStreak > 1 ? ` COMBO x${comboStreak}!` : '';
+        triggerComicPop(`MATCH! ${piece.type} ➔ ${move.capture.type}${comboLabel}`, '#ef4444');
+      } else {
+        movesWithoutCapture++;
+        comboStreak = 0;
+        playSound('move');
+      }
+
+      let justPromoted = false;
+      if (!piece.isKing && ((currentPlayer === 1 && move.r === 0) || (currentPlayer === 2 && move.r === 7))) {
+        piece.isKing = true;
+        justPromoted = true;
+        playSound('king');
+        triggerComicPop('👑 KINGED!', '#f59e0b');
+      }
+
+      if (captured && !justPromoted) {
+        calculateValidMoves(move.r, move.c, true);
+        if (validMoves.length > 0) {
+          isChainCapturing = true;
+          selectedPiece = { row: move.r, col: move.c, ...piece };
+          updateUI();
+          renderBoard();
+          return;
+        }
+      }
+
+      isChainCapturing = false;
+      comboStreak = 0;
+      currentPlayer = currentPlayer === 1 ? 2 : 1;
+      selectedPiece = null;
+      validMoves = [];
+      
+      switchTimerTurn();
+      updateUI();
+      renderBoard();
+      checkWinCondition();
+    }
+
+    function triggerComicPop(text, color) {
+      const container = document.getElementById('pop-fx-container');
+      const pop = document.createElement('div');
+      pop.className = 'comic-pop font-bangers text-3xl sm:text-5xl text-white comic-border px-6 py-3 rounded-xl shadow-2xl';
+      pop.style.backgroundColor = color;
+      pop.style.textShadow = '3px 3px 0px #000';
+      pop.innerText = text;
+
+      container.appendChild(pop);
+      setTimeout(() => pop.remove(), 950);
+    }
+
+    function showGameOver(title, desc, icon = '🏆') {
+      stopTimer();
+      playSound('gameover');
+      document.getElementById('game-over-icon').innerText = icon;
+      document.getElementById('game-over-title').innerText = title;
+      document.getElementById('game-over-desc').innerText = desc;
+      document.getElementById('game-over-modal').classList.remove('hidden');
+    }
+
+    function checkWinCondition() {
+      let p1Pieces = 0, p2Pieces = 0;
+      for (let r = 0; r < BOARD_SIZE; r++) {
+        for (let c = 0; c < BOARD_SIZE; c++) {
+          if (boardState[r][c]) {
+            if (boardState[r][c].player === 1) p1Pieces++;
+            if (boardState[r][c].player === 2) p2Pieces++;
+          }
+        }
+      }
+
+      if (p1Pieces === 0) {
+        showGameOver('PLAYER 2 WINS!', 'Player 1 has no pieces remaining!', '🎉');
+        return;
+      }
+      if (p2Pieces === 0) {
+        showGameOver('PLAYER 1 WINS!', 'Player 2 has no pieces remaining!', '🎉');
+        return;
+      }
+
+      if (movesWithoutCapture >= 20) {
+        showGameOver('IT IS A DRAW!', '20 consecutive moves made without any capture!', '🤝');
+        return;
+      }
+
+      const p1CanMove = hasAnyValidMoves(1);
+      const p2CanMove = hasAnyValidMoves(2);
+
+      if (!p1CanMove && !p2CanMove) {
+        showGameOver('IT IS A DRAW!', 'Neither player has valid moves remaining!', '🤝');
+      } else if (currentPlayer === 1 && !p1CanMove) {
+        showGameOver('PLAYER 2 WINS!', 'Player 1 has no valid moves left to play!', '🏆');
+      } else if (currentPlayer === 2 && !p2CanMove) {
+        showGameOver('PLAYER 1 WINS!', 'Player 2 has no valid moves left to play!', '🏆');
+      }
+    }
+
+    function isValidPos(r, c) {
+      return r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE;
+    }
+
+    window.onload = function() {
+      initGame();
+    };
+  </script>
+</body>
+</html>
