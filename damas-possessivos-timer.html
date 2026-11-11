@@ -162,7 +162,7 @@
             <div class="text-xs text-gray-500 font-bold uppercase flex items-center gap-2">
               <span>CURRENT TURN</span>
               <span id="no-capture-counter" class="bg-amber-200 text-black px-1.5 py-0.2 text-[10px] rounded border border-black font-bold">
-                Moves without capture: 0/20
+                Moves without capture: 0/30
               </span>
             </div>
             <div id="player-turn-text" class="text-xl sm:text-2xl font-bangers text-sky-600">
@@ -545,7 +545,7 @@
     function updateUI() {
       p1ScoreEl.innerText = p1Captured;
       p2ScoreEl.innerText = p2Captured;
-      noCaptureCounterEl.innerText = `Moves without capture: ${movesWithoutCapture}/20`;
+      noCaptureCounterEl.innerText = `Moves without capture: ${movesWithoutCapture}/30`;
 
       if (currentPlayer === 1) {
         playerTurnText.innerText = isChainCapturing ? 'PLAYER 1 (CHAIN COMBO!)' : 'PLAYER 1 (SHE / HE / IT)';
@@ -850,8 +850,8 @@
         return;
       }
 
-      if (movesWithoutCapture >= 20) {
-        showGameOver('IT IS A DRAW!', '20 consecutive moves made without any capture!', '🤝');
+      if (movesWithoutCapture >= 30) {
+        showGameOver('IT IS A DRAW!', '30 consecutive moves made without any capture!', '🤝');
         return;
       }
 
