@@ -242,6 +242,10 @@
             <span class="text-base">2️⃣</span>
             <span><strong>Grammar Match Captures:</strong> A piece can only capture its exact grammatical pair!</span>
           </li>
+          <li class="flex items-start gap-2 text-red-600">
+            <span class="text-base">🚨</span>
+            <span><strong>Mandatory Capture:</strong> If a capture is available, you MUST capture!</span>
+          </li>
         </ul>
 
         <!-- Pairs Table -->
@@ -591,6 +595,110 @@
       }
     }
 
+    function getPieceCaptures(r, c) {
+      const piece = boardState[r][c];
+      if (!piece) return [];
+      const captures = [];
+      const allDirections = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+
+      if (piece.isKing) {
+        for (let [dr, dc] of allDirections) {
+          let step = 1;
+          let enemyFound = null;
+          while (true) {
+            let nr = r + dr * step;
+            let nc = c + dc * step;
+            if (!isValidPos(nr, nc)) break;
+            const target = boardState[nr][nc];
+
+            if (!enemyFound) {
+              if (target) {
+                if (target.player !== piece.player) {
+                  enemyFound = { r: nr, c: nc, type: target.type };
+                } else {
+                  break;
+                }
+              }
+            } else {
+              if (!target) {
+                captures.push({ r: nr, c: nc, capture: enemyFound });
+              } else {
+                break;
+              }
+            }
+            step++;
+          }
+        }
+      } else {
+        for (let [dr, dc] of allDirections) {
+          let nr = r + dr;
+          let nc = c + dc;
+          if (isValidPos(nr, nc) && boardState[nr][nc] && boardState[nr][nc].player !== piece.player) {
+            const targetPiece = boardState[nr][nc];
+            if (MATCHES[piece.type] === targetPiece.type) {
+              let landingR = nr + dr;
+              let landingC = nc + dc;
+              if (isValidPos(landingR, landingC) && !boardState[landingR][landingC]) {
+                captures.push({ r: landingR, c: landingC, capture: { r: nr, c: nc, type: targetPiece.type } });
+              }
+            }
+          }
+        }
+      }
+      return captures;
+    }
+
+    function playerHasAnyCaptures(player) {
+      for (let r = 0; r < BOARD_SIZE; r++) {
+        for (let c = 0; c < BOARD_SIZE; c++) {
+          if (boardState[r][c] && boardState[r][c].player === player) {
+            if (getPieceCaptures(r, c).length > 0) return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    function calculateValidMoves(r, c, capturesOnly = false) {
+      validMoves = [];
+      const piece = boardState[r][c];
+      if (!piece) return;
+
+      const mustCapture = capturesOnly || playerHasAnyCaptures(piece.player);
+
+      if (mustCapture) {
+        validMoves = getPieceCaptures(r, c);
+      } else {
+        const allDirections = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+
+        if (piece.isKing) {
+          for (let [dr, dc] of allDirections) {
+            let step = 1;
+            while (true) {
+              let nr = r + dr * step;
+              let nc = c + dc * step;
+              if (!isValidPos(nr, nc)) break;
+              if (!boardState[nr][nc]) {
+                validMoves.push({ r: nr, c: nc, capture: null });
+              } else {
+                break;
+              }
+              step++;
+            }
+          }
+        } else {
+          const forwardDirs = (piece.player === 1) ? [[-1, -1], [-1, 1]] : [[1, -1], [1, 1]];
+          for (let [dr, dc] of forwardDirs) {
+            let nr = r + dr;
+            let nc = c + dc;
+            if (isValidPos(nr, nc) && !boardState[nr][nc]) {
+              validMoves.push({ r: nr, c: nc, capture: null });
+            }
+          }
+        }
+      }
+    }
+
     function handleCellClick(r, c) {
       const piece = boardState[r][c];
 
@@ -605,9 +713,16 @@
       }
 
       if (piece && piece.player === currentPlayer) {
+        const hasGlobalCaptures = playerHasAnyCaptures(currentPlayer);
         selectedPiece = { row: r, col: c, ...piece };
         calculateValidMoves(r, c);
-        playSound('select');
+
+        if (hasGlobalCaptures && validMoves.length === 0) {
+          triggerComicPop('MUST CAPTURE! ⚔️', '#ef4444');
+          playSound('select');
+        } else {
+          playSound('select');
+        }
         renderBoard();
         return;
       }
@@ -623,76 +738,6 @@
       selectedPiece = null;
       validMoves = [];
       renderBoard();
-    }
-
-    function calculateValidMoves(r, c, capturesOnly = false) {
-      validMoves = [];
-      const piece = boardState[r][c];
-      if (!piece) return;
-
-      const allDirections = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
-
-      if (piece.isKing) {
-        for (let [dr, dc] of allDirections) {
-          let step = 1;
-          let enemyFound = null;
-
-          while (true) {
-            let nr = r + dr * step;
-            let nc = c + dc * step;
-
-            if (!isValidPos(nr, nc)) break;
-            const target = boardState[nr][nc];
-
-            if (!enemyFound) {
-              if (!target) {
-                if (!capturesOnly) {
-                  validMoves.push({ r: nr, c: nc, capture: null });
-                }
-              } else if (target.player !== piece.player) {
-                enemyFound = { r: nr, c: nc, type: target.type };
-              } else {
-                break;
-              }
-            } else {
-              if (!target) {
-                validMoves.push({ r: nr, c: nc, capture: enemyFound });
-              } else {
-                break;
-              }
-            }
-            step++;
-          }
-        }
-      } else {
-        const forwardDirs = (piece.player === 1) ? [[-1, -1], [-1, 1]] : [[1, -1], [1, 1]];
-
-        if (!capturesOnly) {
-          for (let [dr, dc] of forwardDirs) {
-            let nr = r + dr;
-            let nc = c + dc;
-            if (isValidPos(nr, nc) && !boardState[nr][nc]) {
-              validMoves.push({ r: nr, c: nc, capture: null });
-            }
-          }
-        }
-
-        for (let [dr, dc] of allDirections) {
-          let nr = r + dr;
-          let nc = c + dc;
-
-          if (isValidPos(nr, nc) && boardState[nr][nc] && boardState[nr][nc].player !== piece.player) {
-            const targetPiece = boardState[nr][nc];
-            if (MATCHES[piece.type] === targetPiece.type) {
-              let landingR = nr + dr;
-              let landingC = nc + dc;
-              if (isValidPos(landingR, landingC) && !boardState[landingR][landingC]) {
-                validMoves.push({ r: landingR, c: landingC, capture: { r: nr, c: nc, type: targetPiece.type } });
-              }
-            }
-          }
-        }
-      }
     }
 
     function hasAnyValidMoves(player) {
@@ -801,7 +846,7 @@
         return;
       }
       if (p2Pieces === 0) {
-        showGameOver('PLAYER 1 WINS!', 'Player 2 has no pieces remaining!', '🎉');
+        showGameOver('PLAYER 1 WINS!', 'Player 1 has no pieces remaining!', '🎉');
         return;
       }
 
