@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prepositions Dominoes</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700;900&display=swap');
+        
+        body {
+            font-family: 'Comic Neue', cursive;
+            background-color: #60a5fa; /* Blue base for halftone */
+            background-image: radial-gradient(#3b82f6 20%, transparent 20%), radial-gradient(#3b82f6 20%, transparent 20%);
+            background-size: 24px 24px;
+            background-position: 0 0, 12px 12px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .font-comic {
+            font-family: 'Bangers', cursive;
+            letter-spacing: 2px;
+        }
+
+        .comic-box {
+            background-color: #ffffff;
+            border: 4px solid #000;
+            box-shadow: 6px 6px 0 #000;
+            border-radius: 12px;
+        }
+
+        .comic-btn {
+            background-color: #fde047;
+            border: 4px solid #000;
+            box-shadow: 4px 4px 0 #000;
+            text-transform: uppercase;
+            transition: all 0.1s;
+        }
+        
+        .comic-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 #000;
+        }
+
+        .comic-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 0 0 0 #000;
+        }
+
+        /* Domino Piece Styling */
+        .domino-piece {
+            display: flex;
+            width: 140px;
+            height: 64px;
+            border: 4px solid #000;
+            border-radius: 8px;
+            box-shadow: 3px 3px 0 #000;
+            cursor: grab;
+            overflow: hidden;
+            transition: box-shadow 0.1s;
+            background: #fff;
+            transform-origin: center;
+        }
+        
+        .domino-piece:active {
+            cursor: grabbing;
+        }
+
+        .pool-area .domino-piece:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 5px 0 #000;
+        }
+
+        .pool-area .domino-piece:active {
+            transform: translate(1px, 1px);
+            box-shadow: 1px 1px 0 #000;
+        }
+
+        .domino-half {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            font-family: 'Bangers', cursive;
+            letter-spacing: 1px;
+            color: #fff;
+            text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+        }
+
+        .domino-half.left {
+            border-right: 4px solid #000;
+        }
+
+        /* Drop Zones */
+        .drop-zone {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 140px;
+            height: 64px;
+            border: 4px dashed #1e293b;
+            border-radius: 8px;
+            background-color: rgba(255, 255, 255, 0.5);
+            font-family: 'Bangers', cursive;
+            font-size: 1.5rem;
+            letter-spacing: 1px;
+            color: #334155;
+            transition: all 0.2s;
+            box-sizing: border-box;
+            transform-origin: center;
+            z-index: 10;
+        }
+        
+        .drop-zone.hover {
+            background-color: #fde047;
+            border-style: solid;
+            border-color: #000;
+            transform: scale(1.05) translate(-50%, -50%) !important;
+            box-shadow: 4px 4px 0 #000;
+            color: #000;
+        }
+
+        /* Custom Scrollbar for board */
+        .scroll-container::-webkit-scrollbar {
+            height: 12px;
+        }
+        .scroll-container::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-top: 4px solid #000;
+        }
+        .scroll-container::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border: 2px solid #000;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen">
+
+    <!-- SETUP SCREEN -->
+    <div id="screen-setup" class="absolute inset-0 flex items-center justify-center z-50 transition-opacity bg-blue-400/90 backdrop-blur-sm p-4">
+        <div class="comic-box p-8 max-w-2xl text-center flex flex-col items-center">
+            <h1 class="font-comic text-5xl md:text-7xl text-yellow-300 drop-shadow-[3px_3px_0_#000] mb-6" style="text-shadow: 3px 3px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;">
+                PREPOSITIONS DOMINOES!
+            </h1>
+            
+            <p class="text-xl mb-4 text-left border-l-4 border-black pl-4 bg-gray-100 p-3">
+                <strong>Regras:</strong> Jogue como um dominó clássico, mas conectando as <em>Compound Prepositions</em> corretamente!<br><br>
+                <strong>Pares Válidos:</strong><br>
+                • INSTEAD ↔ OF<br>
+                • ACCORDING ↔ TO<br>
+                • PRIOR ↔ TO<br>
+                • DEPEND ↔ ON<br>
+                <br>
+                Se travar, o jogo termina. Peças não usadas adicionam +5s ao seu tempo final!
+            </p>
+
+            <div class="flex gap-6 my-6 font-comic text-2xl">
+                <label class="flex items-center gap-2 cursor-pointer bg-white border-4 border-black px-4 py-2 rounded-xl shadow-[4px_4px_0_#000] hover:-translate-y-1 transition-transform">
+                    <input type="radio" name="piece-count" value="28" checked class="w-6 h-6 accent-blue-600">
+                    28 Peças (Rápido)
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer bg-white border-4 border-black px-4 py-2 rounded-xl shadow-[4px_4px_0_#000] hover:-translate-y-1 transition-transform">
+                    <input type="radio" name="piece-count" value="56" class="w-6 h-6 accent-red-600">
+                    56 Peças (Desafio)
+                </label>
+            </div>
+
+            <button onclick="startGame()" class="comic-btn font-comic text-4xl px-12 py-4 rounded-full mt-4 bg-green-400">
+                START GAME!
+            </button>
+        </div>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="screen-game" class="hidden flex-col h-full w-full">
+        <!-- Header -->
+        <header class="bg-white border-b-4 border-black px-6 py-4 flex justify-between items-center shadow-lg shrink-0">
+            <h2 class="font-comic text-3xl hidden sm:block">Prepositions Dominoes</h2>
+            <div class="flex gap-6 font-comic text-2xl">
+                <div class="bg-blue-100 border-4 border-black px-4 py-1 shadow-[3px_3px_0_#000] flex items-center gap-2">
+                    ⏱️ Tempo: <span id="ui-time">00:00</span>
+                </div>
+                <div class="bg-yellow-100 border-4 border-black px-4 py-1 shadow-[3px_3px_0_#000] flex items-center gap-2">
+                    🧩 Restantes: <span id="ui-remaining">28</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Board Area (where played pieces go) -->
+        <div class="flex-grow relative overflow-auto scroll-container p-8 bg-blue-400/20" id="board-container">
+            <div id="board" class="absolute inset-0 min-w-full min-h-full transition-all duration-300">
+                <!-- Pieces injected here -->
+            </div>
+        </div>
+
+        <!-- Pool Area (playable pieces) -->
+        <div class="h-64 sm:h-72 bg-white border-t-4 border-black p-4 shrink-0 flex flex-col shadow-[0_-4px_10px_rgba(0,0,0,0.1)]">
+            <h3 class="font-comic text-xl mb-2">Sua Mão (Arraste as peças para o tabuleiro)</h3>
+            <div id="pool" class="pool-area flex flex-wrap gap-3 overflow-y-auto content-start flex-grow pb-4 scroll-container">
+                <!-- Unplayed pieces injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- END SCREEN -->
+    <div id="screen-end" class="absolute inset-0 flex items-center justify-center z-50 hidden bg-blue-400/90 backdrop-blur-sm p-4">
+        <div class="comic-box p-8 max-w-xl w-full text-center flex flex-col items-center">
+            <h1 id="end-title" class="font-comic text-5xl text-yellow-300 drop-shadow-[3px_3px_0_#000] mb-2" style="text-shadow: 3px 3px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;">
+                FIM DE JOGO!
+            </h1>
+            <p id="end-subtitle" class="text-2xl mb-6 font-comic text-red-600">Você ficou sem jogadas!</p>
+
+            <div class="w-full bg-gray-100 border-4 border-black p-4 text-left font-bold text-lg mb-6 shadow-inner">
+                <div class="flex justify-between mb-2 border-b-2 border-dashed border-gray-400 pb-1">
+                    <span>Tempo Base:</span>
+                    <span id="stat-base-time">00:00</span>
+                </div>
+                <div class="flex justify-between mb-2 border-b-2 border-dashed border-gray-400 pb-1 text-red-600">
+                    <span>Peças Restantes (x 5s):</span>
+                    <span id="stat-penalty">0s</span>
+                </div>
+                <div class="flex justify-between text-2xl font-comic mt-4">
+                    <span>Tempo Final:</span>
+                    <span id="stat-total-time" class="text-green-600">00:00</span>
+                </div>
+            </div>
+
+            <button onclick="showSetup()" class="comic-btn font-comic text-3xl px-8 py-3 rounded-full bg-yellow-400">
+                JOGAR NOVAMENTE
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA & CONFIG ---
+        const words = ['instead', 'of', 'according', 'prior', 'to', 'depend', 'on'];
+        
+        const colors = {
+            'instead': '#ef4444', // Red
+            'of': '#3b82f6',      // Blue
+            'according': '#eab308', // Yellow
+            'prior': '#f97316',   // Orange
+            'to': '#8b5cf6',      // Purple
+            'depend': '#10b981',  // Green
+            'on': '#06b6d4'       // Cyan
+        };
+
+        const validPairs = [
+            ['instead', 'of'],
+            ['according', 'to'],
+            ['prior', 'to'],
+            ['depend', 'on']
+        ];
+
+        // --- GAME STATE ---
+        let pool = [];
+        let board = [];
+        let exposedLeft = null;
+        let exposedRight = null;
+        
+        let timerInterval = null;
+        let timeElapsed = 0; // seconds
+
+        // --- DOM ELEMENTS ---
+        const screenSetup = document.getElementById('screen-setup');
+        const screenGame = document.getElementById('screen-game');
+        const screenEnd = document.getElementById('screen-end');
+        
+        const boardEl = document.getElementById('board');
+        const boardContainer = document.getElementById('board-container');
+        const poolEl = document.getElementById('pool');
+        
+        const uiTime = document.getElementById('ui-time');
+        const uiRemaining = document.getElementById('ui-remaining');
+
+        // --- LOGIC FUNCTIONS ---
+
+        function matches(w1, w2) {
+            return validPairs.some(p => (p[0] === w1 && p[1] === w2) || (p[0] === w2 && p[1] === w1));
+        }
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const s = (seconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        function generateDeck(totalPieces) {
+            let deck = [];
+            let idCounter = 0;
+            
+            // Dicionário de conexões estritas para garantir solubilidade
+            const getMatches = (w) => {
+                if (w === 'instead') return ['of'];
+                if (w === 'of') return ['instead'];
+                if (w === 'according') return ['to'];
+                if (w === 'to') return ['according', 'prior'];
+                if (w === 'prior') return ['to'];
+                if (w === 'depend') return ['on'];
+                if (w === 'on') return ['depend'];
+                return [];
+            };
+
+            // Começamos com uma extremidade direita aleatória para imaginar a peça "anterior"
+            let currentRight = words[Math.floor(Math.random() * words.length)];
+
+            for (let i = 0; i < totalPieces; i++) {
+                // A esquerda desta peça PRECISA ser um match válido da direita da peça anterior
+                const possibleLefts = getMatches(currentRight);
+                const leftWord = possibleLefts[Math.floor(Math.random() * possibleLefts.length)];
+                
+                // A direita desta peça é aleatória, mas NÃO PODE ser igual à esquerda (evita doubles)
+                let rightWord = words[Math.floor(Math.random() * words.length)];
+                while (rightWord === leftWord) {
+                    rightWord = words[Math.floor(Math.random() * words.length)];
+                }
+
+                deck.push({
+                    id: `piece_${idCounter++}`,
+                    w1: leftWord,
+                    w2: rightWord
+                });
+
+                // A próxima peça precisará conectar na direita da peça recém-criada
+                currentRight = rightWord;
+            }
+
+            // Inverte esquerda/direita de peças aleatórias para o jogador ter que pensar na orientação
+            deck.forEach(p => {
+                if (Math.random() > 0.5) {
+                    const temp = p.w1;
+                    p.w1 = p.w2;
+                    p.w2 = temp;
+                }
+            });
+
+            return deck;
+        }
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // --- GAME FLOW ---
+
+        function showSetup() {
+            screenEnd.classList.add('hidden');
+            screenGame.classList.add('hidden');
+            screenGame.classList.remove('flex');
+            
+            screenSetup.classList.remove('hidden');
+            screenSetup.classList.add('flex');
+        }
+
+        function startGame() {
+            // Get config
+            const countOpt = document.querySelector('input[name="piece-count"]:checked').value;
+            const totalPieces = parseInt(countOpt, 10);
+            
+            // Reset state
+            board = [];
+            exposedLeft = null;
+            exposedRight = null;
+            pool = shuffle(generateDeck(totalPieces));
+            
+            timeElapsed = 0;
+            uiTime.innerText = "00:00";
+            boardEl.style.minWidth = '100%';
+            boardEl.style.minHeight = '100%';
+            
+            // Switch screens
+            screenSetup.classList.add('hidden');
+            screenSetup.classList.remove('flex');
+            screenGame.classList.remove('hidden');
+            screenGame.classList.add('flex');
+            
+            // Start timer & render
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeElapsed++;
+                uiTime.innerText = formatTime(timeElapsed);
+            }, 1000);
+
+            renderBoard();
+            renderPool();
+            updateRemaining();
+        }
+
+        function createDropZone(side, cx, cy, angle, targetWord = '') {
+            const dz = document.createElement('div');
+            dz.className = 'drop-zone absolute';
+            dz.style.left = `${cx}px`;
+            dz.style.top = `${cy}px`;
+            dz.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
+            
+            if (targetWord) {
+                dz.innerHTML = `<span style="opacity: 0.5; transform: rotate(${-angle}deg); display: block;">${targetWord.toUpperCase()}</span>`;
+            } else {
+                dz.innerText = 'DROP';
+            }
+            
+            dz.addEventListener('dragover', (e) => {
+                e.preventDefault(); // Necessary to allow dropping
+                dz.classList.add('hover');
+            });
+            
+            dz.addEventListener('dragleave', () => {
+                dz.classList.remove('hover');
+            });
+            
+            dz.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dz.classList.remove('hover');
+                const pieceId = e.dataTransfer.getData('text/plain');
+                if(pieceId) {
+                    processDrop(pieceId, side);
+                }
+            });
+            
+            return dz;
+        }
+
+        function processDrop(pieceId, side) {
+            const pieceIndex = pool.findIndex(p => p.id === pieceId);
+            if (pieceIndex === -1) return;
+            
+            const piece = pool[pieceIndex];
+            
+            // If board is empty, place anywhere
+            if (board.length === 0) {
+                let cx = boardContainer.clientWidth / 2;
+                let cy = 200;
+                board.push({ w1: piece.w1, w2: piece.w2, originalId: piece.id, cx, cy, angle: 0 });
+                exposedLeft = piece.w1;
+                exposedRight = piece.w2;
+                
+                pool.splice(pieceIndex, 1);
+                finishPlayTurn('center');
+                return;
+            }
+
+            let matched = false;
+            let orientedPiece = null;
+
+            if (side === 'left') {
+                if (matches(piece.w2, exposedLeft)) {
+                    matched = true;
+                    orientedPiece = { w1: piece.w1, w2: piece.w2 };
+                    exposedLeft = piece.w1;
+                } else if (matches(piece.w1, exposedLeft)) {
+                    matched = true;
+                    orientedPiece = { w1: piece.w2, w2: piece.w1 };
+                    exposedLeft = piece.w2;
+                }
+                
+                if (matched) {
+                    orientedPiece.originalId = piece.id;
+                    let pos = calcLeftDrop(board[0]);
+                    board.unshift({ ...orientedPiece, cx: pos.cx, cy: pos.cy, angle: pos.angle });
+                    pool.splice(pieceIndex, 1);
+                    finishPlayTurn('left');
+                }
+            } else if (side === 'right') {
+                if (matches(piece.w1, exposedRight)) {
+                    matched = true;
+                    orientedPiece = { w1: piece.w1, w2: piece.w2 };
+                    exposedRight = piece.w2;
+                } else if (matches(piece.w2, exposedRight)) {
+                    matched = true;
+                    orientedPiece = { w1: piece.w2, w2: piece.w1 };
+                    exposedRight = piece.w1;
+                }
+                
+                if (matched) {
+                    orientedPiece.originalId = piece.id;
+                    let pos = calcRightDrop(board[board.length - 1]);
+                    board.push({ ...orientedPiece, cx: pos.cx, cy: pos.cy, angle: pos.angle });
+                    pool.splice(pieceIndex, 1);
+                    finishPlayTurn('right');
+                }
+            }
+        }
+
+        function finishPlayTurn(scrollDir) {
+            renderBoard();
+            renderPool();
+            updateRemaining();
+            
+            // Auto scroll board
+            setTimeout(() => {
+                if (scrollDir === 'left') {
+                    boardContainer.scrollTo({ left: board[0].cx - boardContainer.clientWidth/2, top: board[0].cy - boardContainer.clientHeight/2, behavior: 'smooth' });
+                } else if (scrollDir === 'right') {
+                    let tail = board[board.length-1];
+                    boardContainer.scrollTo({ left: tail.cx - boardContainer.clientWidth/2, top: tail.cy - boardContainer.clientHeight/2, behavior: 'smooth' });
+                }
+            }, 50);
+
+            checkGameEnd();
+        }
+
+        function checkGameEnd() {
+            if (pool.length === 0) {
+                endGame(true);
+                return;
+            }
+            
+            if (board.length === 0) return;
+
+            // Check if any piece in pool can be played
+            const canPlay = pool.some(p => 
+                matches(p.w1, exposedLeft) || matches(p.w2, exposedLeft) ||
+                matches(p.w1, exposedRight) || matches(p.w2, exposedRight)
+            );
+
+            if (!canPlay) {
+                endGame(false);
+            }
+        }
+
+        function endGame(won) {
+            clearInterval(timerInterval);
+            
+            const penaltySeconds = pool.length * 5;
+            const finalTime = timeElapsed + penaltySeconds;
+
+            document.getElementById('end-title').innerText = won ? "VENCEU! 🎉" : "FIM DE JOGO!";
+            document.getElementById('end-subtitle').innerText = won ? "Você usou todas as peças!" : "Você ficou sem jogadas possíveis (No Moves Left).";
+            document.getElementById('end-subtitle').className = won ? "text-2xl mb-6 font-comic text-green-600" : "text-2xl mb-6 font-comic text-red-600";
+
+            document.getElementById('stat-base-time').innerText = formatTime(timeElapsed) + ` (${timeElapsed}s)`;
+            document.getElementById('stat-penalty').innerText = `${pool.length} peças x 5s = +${penaltySeconds}s`;
+            document.getElementById('stat-total-time').innerText = formatTime(finalTime) + ` (${finalTime}s)`;
+
+            screenEnd.classList.remove('hidden');
+            screenEnd.classList.add('flex');
+        }
+
+        // --- RENDER FUNCTIONS ---
+
+        function createPieceElement(pData, isDraggable) {
+            const dom = document.createElement('div');
+            dom.id = pData.originalId || pData.id;
+            
+            let classStr = 'domino-piece';
+            if (isDraggable) classStr += ' hover:-translate-y-1';
+            else classStr += ' absolute';
+            dom.className = classStr;
+            
+            if (!isDraggable) {
+                dom.style.left = `${pData.cx}px`;
+                dom.style.top = `${pData.cy}px`;
+                dom.style.transform = `translate(-50%, -50%) rotate(${pData.angle}deg)`;
+            }
+            
+            const half1 = document.createElement('div');
+            half1.className = 'domino-half left';
+            half1.style.backgroundColor = colors[pData.w1];
+            // Fix text orientation if piece is upside down
+            if (pData.angle === 180) half1.style.transform = 'rotate(180deg)'; 
+            half1.innerText = pData.w1.toUpperCase();
+
+            const half2 = document.createElement('div');
+            half2.className = 'domino-half right';
+            half2.style.backgroundColor = colors[pData.w2];
+            if (pData.angle === 180) half2.style.transform = 'rotate(180deg)';
+            half2.innerText = pData.w2.toUpperCase();
+
+            dom.appendChild(half1);
+            dom.appendChild(half2);
+
+            if (isDraggable) {
+                dom.draggable = true;
+                dom.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', pData.id);
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+            }
+            
+            return dom;
+        }
+
+        function getOutPort(piece) {
+            if(piece.angle === 0) return { x: piece.cx + 70, y: piece.cy };
+            if(piece.angle === 90) return { x: piece.cx, y: piece.cy + 70 };
+            if(piece.angle === 180) return { x: piece.cx - 70, y: piece.cy };
+            if(piece.angle === 270) return { x: piece.cx, y: piece.cy - 70 };
+        }
+
+        function getInPort(piece) {
+            if(piece.angle === 0) return { x: piece.cx - 70, y: piece.cy };
+            if(piece.angle === 90) return { x: piece.cx, y: piece.cy - 70 };
+            if(piece.angle === 180) return { x: piece.cx + 70, y: piece.cy };
+            if(piece.angle === 270) return { x: piece.cx, y: piece.cy + 70 };
+        }
+
+        function calcRightDrop(tail) {
+            let containerW = boardContainer.clientWidth;
+            let pad = 60;
+            let outPort = getOutPort(tail);
+            let nextAngle = tail.angle;
+
+            if (tail.angle === 0 && outPort.x + 140 > containerW - pad) nextAngle = 90;
+            else if (tail.angle === 180 && outPort.x - 140 < pad) nextAngle = 90;
+            else if (tail.angle === 90) {
+                let prev = board.length >= 2 ? board[board.length - 2] : null;
+                if (prev && prev.angle === 0) nextAngle = 180;
+                else if (prev && prev.angle === 180) nextAngle = 0;
+                else nextAngle = 0;
+            }
+
+            let cx, cy;
+            if (nextAngle === 0) { cx = outPort.x + 70; cy = outPort.y; }
+            else if (nextAngle === 90) { cx = outPort.x; cy = outPort.y + 70; }
+            else if (nextAngle === 180) { cx = outPort.x - 70; cy = outPort.y; }
+            else if (nextAngle === 270) { cx = outPort.x; cy = outPort.y - 70; }
+
+            return { cx, cy, angle: nextAngle };
+        }
+
+        function calcLeftDrop(head) {
+            let containerW = boardContainer.clientWidth;
+            let pad = 60;
+            let inPort = getInPort(head);
+            let nextAngle = head.angle;
+
+            if (head.angle === 0 && inPort.x - 140 < pad) nextAngle = 90;
+            else if (head.angle === 180 && inPort.x + 140 > containerW - pad) nextAngle = 90;
+            else if (head.angle === 90) {
+                let nextPiece = board.length >= 2 ? board[1] : null;
+                if (nextPiece && nextPiece.angle === 0) nextAngle = 180;
+                else if (nextPiece && nextPiece.angle === 180) nextAngle = 0;
+                else nextAngle = 0;
+            }
+
+            let cx, cy;
+            if (nextAngle === 0) { cx = inPort.x - 70; cy = inPort.y; }
+            else if (nextAngle === 90) { cx = inPort.x; cy = inPort.y - 70; }
+            else if (nextAngle === 180) { cx = inPort.x + 70; cy = inPort.y; }
+            else if (nextAngle === 270) { cx = inPort.x; cy = inPort.y + 70; }
+
+            return { cx, cy, angle: nextAngle };
+        }
+
+        function recenterBoard() {
+            if (board.length === 0) return;
+            let minX = Infinity, minY = Infinity;
+            let maxX = -Infinity, maxY = -Infinity;
+
+            const checkBounds = (cx, cy, angle) => {
+                let w = (angle === 0 || angle === 180) ? 140 : 64;
+                let h = (angle === 0 || angle === 180) ? 64 : 140;
+                minX = Math.min(minX, cx - w/2);
+                minY = Math.min(minY, cy - h/2);
+                maxX = Math.max(maxX, cx + w/2);
+                maxY = Math.max(maxY, cy + h/2);
+            };
+
+            board.forEach(p => checkBounds(p.cx, p.cy, p.angle));
+            
+            let rightPos = calcRightDrop(board[board.length - 1]);
+            let leftPos = calcLeftDrop(board[0]);
+            checkBounds(rightPos.cx, rightPos.cy, rightPos.angle);
+            checkBounds(leftPos.cx, leftPos.cy, leftPos.angle);
+
+            let pad = 80;
+            let dx = 0, dy = 0;
+
+            if (minX < pad) dx = pad - minX;
+            if (minY < pad) dy = pad - minY;
+
+            if (dx !== 0 || dy !== 0) {
+                board.forEach(p => {
+                    p.cx += dx;
+                    p.cy += dy;
+                });
+            }
+
+            boardEl.style.minWidth = `${maxX + dx + pad}px`;
+            boardEl.style.minHeight = `${maxY + dy + pad}px`;
+        }
+
+        function renderBoard() {
+            boardEl.innerHTML = '';
+            
+            if (board.length === 0) {
+                let cx = boardContainer.clientWidth / 2;
+                let cy = 200;
+                const centerZone = createDropZone('center', cx, cy, 0);
+                centerZone.style.width = '300px';
+                centerZone.style.height = '100px';
+                centerZone.style.borderWidth = '6px';
+                centerZone.innerHTML = '<span style="font-size: 2rem; color: #000;">DROP FIRST PIECE HERE</span>';
+                boardEl.appendChild(centerZone);
+                return;
+            }
+            
+            recenterBoard();
+
+            // Render Left Drop Zone
+            let leftPos = calcLeftDrop(board[0]);
+            boardEl.appendChild(createDropZone('left', leftPos.cx, leftPos.cy, leftPos.angle, board[0].w1));
+            
+            // Render Pieces
+            board.forEach(pData => {
+                const pEl = createPieceElement(pData, false);
+                boardEl.appendChild(pEl);
+            });
+            
+            // Render Right Drop Zone
+            let rightPos = calcRightDrop(board[board.length - 1]);
+            boardEl.appendChild(createDropZone('right', rightPos.cx, rightPos.cy, rightPos.angle, board[board.length - 1].w2));
+        }
+
+        function renderPool() {
+            poolEl.innerHTML = '';
+            pool.forEach(pData => {
+                const pEl = createPieceElement(pData, true);
+                poolEl.appendChild(pEl);
+            });
+        }
+
+        function updateRemaining() {
+            uiRemaining.innerText = pool.length;
+        }
+        
+    </script>
+</body>
+</html>
