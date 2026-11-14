@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prepositions Dominoes</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Bangers & Comic Neue -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700;900&display=swap');
+
+        :root {
+            --comic-yellow: #fde047;
+            --comic-blue: #3b82f6;
+            --comic-red: #ef4444;
+            --comic-green: #22c55e;
+        }
+
+        body {
+            font-family: 'Comic Neue', cursive;
+            background-color: #60a5fa;
+            background-image:
+                radial-gradient(#2563eb 22%, transparent 23%),
+                radial-gradient(#2563eb 22%, transparent 23%);
+            background-size: 24px 24px;
+            background-position: 0 0, 12px 12px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .font-comic {
+            font-family: 'Bangers', cursive;
+            letter-spacing: 1.5px;
+        }
+
+        .comic-title-shadow {
+            text-shadow:
+                3px 3px 0 #000,
+                -1.5px -1.5px 0 #000,
+                1.5px -1.5px 0 #000,
+                -1.5px 1.5px 0 #000,
+                1.5px 1.5px 0 #000;
+        }
+
+        .comic-box {
+            background-color: #ffffff;
+            border: 4px solid #000;
+            box-shadow: 6px 6px 0 #000;
+            border-radius: 14px;
+        }
+
+        .comic-btn {
+            border: 4px solid #000;
+            box-shadow: 4px 4px 0 #000;
+            text-transform: uppercase;
+            transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.15s ease;
+            cursor: pointer;
+        }
+
+        .comic-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 #000;
+        }
+
+        .comic-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0 #000;
+        }
+
+        /* Mode Selector Cards */
+        .mode-card {
+            border: 4px solid #000;
+            box-shadow: 4px 4px 0 #000;
+            border-radius: 12px;
+            background-color: #f8fafc;
+            cursor: pointer;
+            transition: all 0.12s ease;
+        }
+
+        .mode-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 6px 6px 0 #000;
+        }
+
+        .mode-card.active {
+            background-color: #fde047;
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 #000;
+        }
+
+        /* Domino Piece Styling */
+        .domino-piece {
+            display: flex;
+            width: 144px;
+            height: 64px;
+            border: 4px solid #000;
+            border-radius: 10px;
+            box-shadow: 4px 4px 0 #000;
+            cursor: grab;
+            overflow: hidden;
+            background: #fff;
+            transform-origin: center;
+            transition: transform 0.12s ease, box-shadow 0.12s ease, outline 0.12s ease;
+            touch-action: none;
+        }
+
+        .domino-piece:active {
+            cursor: grabbing;
+        }
+
+        .pool-area .domino-piece:hover {
+            transform: translate(-2px, -3px);
+            box-shadow: 6px 6px 0 #000;
+        }
+
+        .domino-piece.dragging {
+            opacity: 0.45;
+            transform: scale(0.95);
+        }
+
+        .domino-piece.selected-tile {
+            outline: 4px solid #fde047;
+            outline-offset: 2px;
+            transform: translateY(-6px) scale(1.04);
+            box-shadow: 6px 8px 0 #000;
+        }
+
+        @keyframes popSnap {
+            0% { transform: translate(-50%, -50%) scale(1.22); }
+            70% { transform: translate(-50%, -50%) scale(0.95); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .snap-effect {
+            filter: brightness(1.12);
+        }
+
+        .domino-half {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.05rem;
+            font-family: 'Bangers', cursive;
+            letter-spacing: 1px;
+            color: #fff;
+            padding: 0 4px;
+            text-align: center;
+            text-shadow:
+                2px 2px 0 #000,
+                -1px -1px 0 #000,
+                1px -1px 0 #000,
+                -1px 1px 0 #000,
+                1px 1px 0 #000;
+        }
+
+        .domino-half.left {
+            border-right: 4px solid #000;
+        }
+
+        /* Drop Zones */
+        .drop-zone {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 144px;
+            height: 64px;
+            border: 4px dashed #0f172a;
+            border-radius: 10px;
+            background-color: rgba(255, 255, 255, 0.78);
+            box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.35);
+            font-family: 'Bangers', cursive;
+            color: #0f172a;
+            transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+            box-sizing: border-box;
+            transform-origin: center;
+            z-index: 15;
+            cursor: pointer;
+        }
+
+        .drop-zone.hover,
+        .drop-zone.ready-target {
+            background-color: #fde047;
+            border-style: solid;
+            border-color: #000;
+            box-shadow: 5px 5px 0 #000;
+            color: #000;
+        }
+
+        @keyframes comicShake {
+            0%, 100% { margin-left: 0; }
+            20% { margin-left: -10px; background-color: #fca5a5; }
+            40% { margin-left: 10px; background-color: #fca5a5; }
+            60% { margin-left: -7px; }
+            80% { margin-left: 7px; }
+        }
+
+        .shake-zone {
+            animation: comicShake 0.35s ease-in-out;
+        }
+
+        /* Floating Touch Clone */
+        #touch-ghost {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%) rotate(-4deg) scale(1.06);
+            box-shadow: 8px 8px 0 #000;
+        }
+
+        /* Custom Scrollbars */
+        .scroll-container::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        .scroll-container::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-top: 3px solid #000;
+        }
+        .scroll-container::-webkit-scrollbar-thumb {
+            background-color: #94a3b8;
+            border: 2px solid #000;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen">
+
+    <!-- COMIC TOAST FEEDBACK -->
+    <div id="comic-toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-opacity duration-200">
+        <div id="comic-toast-inner" class="bg-red-500 text-white font-comic text-2xl px-6 py-2 border-4 border-black rounded-xl shadow-[5px_5px_0_#000] comic-title-shadow">
+            NÃO ENCAIXA! 💥
+        </div>
+    </div>
+
+    <!-- RULES & MATCHES MODAL -->
+    <div id="modal-rules" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/75 backdrop-blur-xs p-4">
+        <div class="comic-box p-6 max-w-lg w-full relative bg-white">
+            <div class="flex justify-between items-center border-b-4 border-black pb-3 mb-4">
+                <h2 class="font-comic text-3xl text-yellow-400 comic-title-shadow">📖 REGRAS & ENCAIXES</h2>
+                <button onclick="toggleRulesModal(false)" class="comic-btn bg-red-400 font-comic text-xl px-3 py-1 rounded-lg">✕</button>
+            </div>
+
+            <p class="text-base mb-3">
+                Conecte as pontas do dominó formando as <strong>Compound & Dependent Prepositions</strong> corretas (em qualquer direção):
+            </p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-4 font-comic text-xl">
+                <div class="bg-red-100 border-3 border-black rounded-lg p-2.5 text-center shadow-[3px_3px_0_#000]">
+                    <span class="text-red-600">INSTEAD</span> ↔ <span class="text-blue-600">OF</span>
+                </div>
+                <div class="bg-yellow-100 border-3 border-black rounded-lg p-2.5 text-center shadow-[3px_3px_0_#000]">
+                    <span class="text-amber-600">ACCORDING</span> ↔ <span class="text-purple-600">TO</span>
+                </div>
+                <div class="bg-orange-100 border-3 border-black rounded-lg p-2.5 text-center shadow-[3px_3px_0_#000]">
+                    <span class="text-orange-600">PRIOR</span> ↔ <span class="text-purple-600">TO</span>
+                </div>
+                <div class="bg-emerald-100 border-3 border-black rounded-lg p-2.5 text-center shadow-[3px_3px_0_#000]">
+                    <span class="text-emerald-600">DEPEND</span> ↔ <span class="text-cyan-600">ON</span>
+                </div>
+            </div>
+
+            <ul class="text-sm space-y-1.5 bg-slate-100 border-2 border-black rounded-lg p-3 mb-4">
+                <li>🖱️ <strong>Arraste e solte</strong> uma peça nas zonas <em>"SOLTE AQUI"</em> ou <strong>toque na peça e depois na ponta</strong>.</li>
+                <li>🔄 O jogo gira a peça automaticamente se o lado correspondente estiver invertido.</li>
+                <li>⏱️ <strong>Penalidade:</strong> Se não houver mais jogadas possíveis, cada peça restante soma <strong>+5 segundos</strong> ao tempo final!</li>
+            </ul>
+
+            <button onclick="toggleRulesModal(false)" class="comic-btn w-full bg-green-400 font-comic text-2xl py-2 rounded-xl">
+                ENTENDI!
+            </button>
+        </div>
+    </div>
+
+    <!-- SETUP SCREEN -->
+    <div id="screen-setup" class="fixed inset-0 flex items-center justify-center z-40 bg-blue-500/85 backdrop-blur-xs p-4 overflow-y-auto">
+        <div class="comic-box p-6 sm:p-8 max-w-2xl w-full text-center flex flex-col items-center my-auto">
+            <span class="bg-red-500 text-white font-comic text-base px-4 py-1 border-3 border-black rounded-full shadow-[3px_3px_0_#000] mb-2 -rotate-2">
+                ENGLISH FOR IT • HQ EDITION
+            </span>
+
+            <h1 class="font-comic text-5xl sm:text-6xl text-yellow-300 comic-title-shadow mb-3">
+                PREPOSITIONS DOMINOES!
+            </h1>
+
+            <p class="text-base sm:text-lg mb-5 text-slate-800 max-w-xl">
+                Encaixe todas as peças no menor tempo possível! Cada peça que sobrar caso o jogo trave adiciona <strong>+5s</strong> de penalidade.
+            </p>
+
+            <!-- Deck Size Selector (14 / 28 / 56) -->
+            <div class="w-full mb-5">
+                <div class="font-comic text-2xl mb-2 text-slate-900">ESCOLHA O MODO DE JOGO:</div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" id="mode-selector">
+                    <button type="button" data-count="14" onclick="selectPieceCount(14)" class="mode-card active p-3 flex flex-col items-center justify-center">
+                        <span class="font-comic text-3xl text-red-600">14 PEÇAS</span>
+                        <span class="text-sm font-black uppercase">Ultra Rápido ⚡</span>
+                        <span id="best-badge-14" class="text-xs mt-1 bg-white border-2 border-black px-2 py-0.5 rounded-md">Recorde: --</span>
+                    </button>
+
+                    <button type="button" data-count="28" onclick="selectPieceCount(28)" class="mode-card p-3 flex flex-col items-center justify-center">
+                        <span class="font-comic text-3xl text-blue-600">28 PEÇAS</span>
+                        <span class="text-sm font-black uppercase">Clássico 🎯</span>
+                        <span id="best-badge-28" class="text-xs mt-1 bg-white border-2 border-black px-2 py-0.5 rounded-md">Recorde: --</span>
+                    </button>
+
+                    <button type="button" data-count="56" onclick="selectPieceCount(56)" class="mode-card p-3 flex flex-col items-center justify-center">
+                        <span class="font-comic text-3xl text-purple-600">56 PEÇAS</span>
+                        <span class="text-sm font-black uppercase">Maratona 🔥</span>
+                        <span id="best-badge-56" class="text-xs mt-1 bg-white border-2 border-black px-2 py-0.5 rounded-md">Recorde: --</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Pairs Strip -->
+            <div class="w-full bg-slate-100 border-3 border-black rounded-xl p-3 mb-6 text-sm">
+                <div class="font-comic text-lg mb-1">ENCAIXES VÁLIDOS:</div>
+                <div class="flex flex-wrap justify-center gap-2 font-comic text-base">
+                    <span class="bg-white border-2 border-black px-2.5 py-0.5 rounded-md">INSTEAD ↔ OF</span>
+                    <span class="bg-white border-2 border-black px-2.5 py-0.5 rounded-md">ACCORDING ↔ TO</span>
+                    <span class="bg-white border-2 border-black px-2.5 py-0.5 rounded-md">PRIOR ↔ TO</span>
+                    <span class="bg-white border-2 border-black px-2.5 py-0.5 rounded-md">DEPEND ↔ ON</span>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-4 justify-center w-full">
+                <button onclick="toggleRulesModal(true)" class="comic-btn font-comic text-2xl px-6 py-3 rounded-full bg-white">
+                    📖 REGRAS
+                </button>
+                <button onclick="startGame()" class="comic-btn font-comic text-3xl px-10 py-3 rounded-full bg-green-400">
+                    START GAME! 🚀
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="screen-game" class="hidden flex-col h-full w-full">
+        <!-- Header -->
+        <header class="bg-white border-b-4 border-black px-3 sm:px-6 py-2.5 flex flex-wrap justify-between items-center gap-2 shadow-md shrink-0 z-20">
+            <div class="flex items-center gap-3">
+                <h2 class="font-comic text-2xl sm:text-3xl text-yellow-400 comic-title-shadow">PREPOSITIONS DOMINOES</h2>
+                <span id="ui-mode-tag" class="hidden md:inline-block bg-yellow-300 border-2 border-black px-2.5 py-0.5 rounded-lg font-comic text-base">
+                    14 PEÇAS ⚡
+                </span>
+            </div>
+
+            <div class="flex items-center gap-2 sm:gap-4 font-comic text-lg sm:text-2xl">
+                <div class="bg-blue-100 border-3 border-black px-3 py-1 rounded-lg shadow-[3px_3px_0_#000] flex items-center gap-1.5">
+                    <span>⏱️</span>
+                    <span id="ui-time" class="tabular-nums">00:00.0</span>
+                </div>
+                <div class="bg-yellow-100 border-3 border-black px-3 py-1 rounded-lg shadow-[3px_3px_0_#000] flex items-center gap-1.5">
+                    <span>🧩</span>
+                    <span id="ui-remaining">13</span>
+                </div>
+                <button onclick="toggleRulesModal(true)" class="comic-btn bg-amber-300 px-3 py-1 rounded-lg text-base sm:text-lg" title="Regras & Encaixes">
+                    📖 Regras
+                </button>
+                <button onclick="confirmRestart()" class="comic-btn bg-red-400 px-3 py-1 rounded-lg text-base sm:text-lg" title="Reiniciar / Mudar Modo">
+                    ↺ Reiniciar
+                </button>
+            </div>
+        </header>
+
+        <!-- Board Area (Snake / Boustrophedon layout) -->
+        <div class="flex-grow relative overflow-auto scroll-container bg-blue-400/15" id="board-container">
+            <div id="board" class="relative min-w-full min-h-full">
+                <!-- Placed dominoes and drop zones injected here -->
+            </div>
+        </div>
+
+        <!-- Player Hand Area -->
+        <div class="h-56 sm:h-64 bg-white border-t-4 border-black p-3 sm:p-4 shrink-0 flex flex-col shadow-[0_-4px_12px_rgba(0,0,0,0.12)] z-20">
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="font-comic text-lg sm:text-xl text-slate-800">
+                    SUA MÃO <span class="font-sans text-xs sm:text-sm font-bold text-slate-500">(Arraste para "SOLTE AQUI" ou toque na peça e depois na ponta)</span>
+                </h3>
+                <span id="selected-hint" class="hidden text-xs sm:text-sm bg-yellow-300 border-2 border-black px-2.5 py-0.5 rounded-full font-bold">
+                    Peça selecionada! Toque em uma ponta no tabuleiro.
+                </span>
+            </div>
+            <div id="pool" class="pool-area flex flex-wrap gap-3 overflow-y-auto content-start flex-grow pb-3 pr-1 scroll-container">
+                <!-- Hand pieces injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- END SCREEN MODAL -->
+    <div id="screen-end" class="fixed inset-0 flex items-center justify-center z-50 hidden bg-slate-900/80 backdrop-blur-xs p-4">
+        <div class="comic-box p-6 sm:p-8 max-w-lg w-full text-center flex flex-col items-center">
+            <div id="end-record-badge" class="hidden bg-yellow-300 border-3 border-black px-4 py-1 rounded-full font-comic text-lg shadow-[3px_3px_0_#000] mb-2 -rotate-2">
+                🏆 NOVO RECORDE PESSOAL!
+            </div>
+
+            <h1 id="end-title" class="font-comic text-5xl text-yellow-300 comic-title-shadow mb-1">
+                VITÓRIA! 🎉
+            </h1>
+            <p id="end-subtitle" class="text-xl mb-5 font-comic text-green-600">
+                Você encaixou todas as peças!
+            </p>
+
+            <div class="w-full bg-slate-100 border-4 border-black rounded-xl p-4 text-left font-bold text-base sm:text-lg mb-6 shadow-inner space-y-2">
+                <div class="flex justify-between border-b-2 border-dashed border-slate-400 pb-1.5">
+                    <span>Modo Jogado:</span>
+                    <span id="stat-mode" class="font-comic text-xl">14 Peças (Ultra Rápido)</span>
+                </div>
+                <div class="flex justify-between border-b-2 border-dashed border-slate-400 pb-1.5">
+                    <span>Tempo Base:</span>
+                    <span id="stat-base-time" class="tabular-nums">00:00.0</span>
+                </div>
+                <div class="flex justify-between border-b-2 border-dashed border-slate-400 pb-1.5 text-red-600">
+                    <span>Penalidade (Peças × 5s):</span>
+                    <span id="stat-penalty" class="tabular-nums">0 × 5s = +0.0s</span>
+                </div>
+                <div class="flex justify-between items-center pt-1 text-2xl font-comic">
+                    <span>TEMPO FINAL:</span>
+                    <span id="stat-total-time" class="text-green-600 tabular-nums">00:00.0</span>
+                </div>
+                <div class="flex justify-between items-center text-sm text-slate-600 pt-1 border-t border-slate-300">
+                    <span>Melhor Recorde neste modo:</span>
+                    <span id="stat-best-time" class="font-black text-slate-900 tabular-nums">--</span>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-3 w-full justify-center">
+                <button onclick="showSetup()" class="comic-btn font-comic text-2xl px-6 py-3 rounded-full bg-yellow-300">
+                    ⚙️ TROCAR MODO
+                </button>
+                <button onclick="startGame()" class="comic-btn font-comic text-2xl px-8 py-3 rounded-full bg-green-400">
+                    🔄 JOGAR NOVAMENTE
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. GAME CONSTANTS & DICTIONARY ---
+        const WORDS = ['instead', 'of', 'according', 'prior', 'to', 'depend', 'on'];
+
+        const COLORS = {
+            'instead': '#ef4444',   // Pop Red
+            'of': '#3b82f6',        // Pop Blue
+            'according': '#eab308', // Pop Yellow
+            'prior': '#f97316',     // Pop Orange
+            'to': '#8b5cf6',        // Pop Purple
+            'depend': '#10b981',    // Pop Emerald
+            'on': '#06b6d4'         // Pop Cyan
+        };
+
+        const VALID_PAIRS = [
+            ['instead', 'of'],
+            ['according', 'to'],
+            ['prior', 'to'],
+            ['depend', 'on']
+        ];
+
+        const MODE_LABELS = {
+            14: '14 Peças (Ultra Rápido ⚡)',
+            28: '28 Peças (Clássico 🎯)',
+            56: '56 Peças (Maratona 🔥)'
+        };
+
+        const TILE_W = 144;
+        const TILE_H = 64;
+        const HALF_W = TILE_W / 2; // 72px
+
+        // --- 2. GAME STATE ---
+        let selectedPieceCount = 14;
+        let pool = [];
+        let board = []; // Ordered list of placed tiles: { w1, w2, originalId, cx, cy, angle }
+        let anchorIndex = 0; // Index in `board` of the initial center tile
+        let exposedLeft = null;
+        let exposedRight = null;
+        let selectedHandPieceId = null; // For tap-to-place fallback
+        let lastPlacedId = null;
+
+        let timerInterval = null;
+        let startTimePerf = 0;
+        let elapsedSeconds = 0;
+        let isGameActive = false;
+
+        // Touch drag state
+        let activeTouchPieceId = null;
+        let touchGhostEl = null;
+
+        // --- 3. DOM REFERENCES ---
+        const screenSetup = document.getElementById('screen-setup');
+        const screenGame = document.getElementById('screen-game');
+        const screenEnd = document.getElementById('screen-end');
+        const modalRules = document.getElementById('modal-rules');
+
+        const boardEl = document.getElementById('board');
+        const boardContainer = document.getElementById('board-container');
+        const poolEl = document.getElementById('pool');
+
+        const uiTime = document.getElementById('ui-time');
+        const uiRemaining = document.getElementById('ui-remaining');
+        const uiModeTag = document.getElementById('ui-mode-tag');
+        const selectedHint = document.getElementById('selected-hint');
+
+        // --- 4. VALIDATION & FORMATTING HELPERS ---
+        function matches(w1, w2) {
+            return VALID_PAIRS.some(
+                ([a, b]) => (a === w1 && b === w2) || (a === w2 && b === w1)
+            );
+        }
+
+        function getMatchingWords(word) {
+            const result = [];
+            for (const [a, b] of VALID_PAIRS) {
+                if (a === word) result.push(b);
+                else if (b === word) result.push(a);
+            }
+            return result;
+        }
+
+        function formatTimeTenths(totalSec) {
+            const mins = Math.floor(totalSec / 60).toString().padStart(2, '0');
+            const secs = Math.floor(totalSec % 60).toString().padStart(2, '0');
+            const tenths = Math.floor((totalSec * 10) % 10);
+            return `${mins}:${secs}.${tenths}`;
+        }
+
+        function showComicToast(message, isError = true) {
+            const toast = document.getElementById('comic-toast');
+            const inner = document.getElementById('comic-toast-inner');
+            inner.textContent = message;
+            inner.className = isError
+                ? 'bg-red-500 text-white font-comic text-2xl px-6 py-2 border-4 border-black rounded-xl shadow-[5px_5px_0_#000] comic-title-shadow'
+                : 'bg-green-500 text-white font-comic text-2xl px-6 py-2 border-4 border-black rounded-xl shadow-[5px_5px_0_#000] comic-title-shadow';
+
+            toast.classList.remove('opacity-0');
+            clearTimeout(toast._hideTimer);
+            toast._hideTimer = setTimeout(() => {
+                toast.classList.add('opacity-0');
+            }, 1300);
+        }
+
+        function toggleRulesModal(show) {
+            if (show) {
+                modalRules.classList.remove('hidden');
+                modalRules.classList.add('flex');
+            } else {
+                modalRules.classList.add('hidden');
+                modalRules.classList.remove('flex');
+            }
+        }
+
+        // --- 5. LOCALSTORAGE BEST RECORDS ---
+        function getBestRecord(count) {
+            const raw = localStorage.getItem(`prepositions_dominoes_best_${count}`);
+            return raw !== null ? parseFloat(raw) : null;
+        }
+
+        function saveBestRecord(count, scoreSeconds) {
+            const currentBest = getBestRecord(count);
+            if (currentBest === null || scoreSeconds < currentBest) {
+                localStorage.setItem(`prepositions_dominoes_best_${count}`, scoreSeconds.toFixed(1));
+                return true; // New record!
+            }
+            return false;
+        }
+
+        function refreshRecordBadges() {
+            [14, 28, 56].forEach(count => {
+                const best = getBestRecord(count);
+                const badge = document.getElementById(`best-badge-${count}`);
+                if (badge) {
+                    badge.textContent = best !== null
+                        ? `Recorde: ${formatTimeTenths(best)}`
+                        : 'Recorde: --';
+                }
+            });
+        }
+
+        // --- 6. MODE SELECTION & SOLVABLE DECK GENERATION ---
+        function selectPieceCount(count) {
+            selectedPieceCount = count;
+            document.querySelectorAll('.mode-card').forEach(card => {
+                const cardCount = parseInt(card.getAttribute('data-count'), 10);
+                card.classList.toggle('active', cardCount === count);
+            });
+        }
+
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        /**
+         * Builds a guaranteed-solvable chain of N tiles:
+         * - tile[i].w2 validly connects to tile[i+1].w1
+         * - tile[i].w1 !== tile[i].w2 (never double/identical halves)
+         * - Randomly flips tiles and shuffles the remaining N-1 tiles for the player's hand
+         */
+        function generateSolvableDeck(totalPieces) {
+            const chain = [];
+            let prevRight = WORDS[Math.floor(Math.random() * WORDS.length)];
+
+            for (let i = 0; i < totalPieces; i++) {
+                const validLefts = getMatchingWords(prevRight);
+                const w1 = validLefts[Math.floor(Math.random() * validLefts.length)];
+
+                // Pick w2 distinct from w1
+                const distinctWords = WORDS.filter(w => w !== w1);
+                const w2 = distinctWords[Math.floor(Math.random() * distinctWords.length)];
+
+                chain.push({
+                    id: `tile_${i}_${Math.random().toString(36).slice(2, 6)}`,
+                    w1,
+                    w2
+                });
+                prevRight = w2;
+            }
+
+            // Flip random tiles so player must orient them
+            chain.forEach(tile => {
+                if (Math.random() > 0.5) {
+                    [tile.w1, tile.w2] = [tile.w2, tile.w1];
+                }
+            });
+
+            return chain;
+        }
+
+        // --- 7. GAME LIFECYCLE ---
+        function showSetup() {
+            clearInterval(timerInterval);
+            isGameActive = false;
+            clearSelectedTile();
+            refreshRecordBadges();
+
+            screenEnd.classList.add('hidden');
+            screenEnd.classList.remove('flex');
+            screenGame.classList.add('hidden');
+            screenGame.classList.remove('flex');
+
+            screenSetup.classList.remove('hidden');
+            screenSetup.classList.add('flex');
+        }
+
+        function confirmRestart() {
+            showSetup();
+        }
+
+        function startGame() {
+            const fullDeck = generateSolvableDeck(selectedPieceCount);
+
+            // Place the first tile automatically on the board to establish both open ends
+            const starterTile = fullDeck[0];
+            board = [{
+                w1: starterTile.w1,
+                w2: starterTile.w2,
+                originalId: starterTile.id,
+                cx: 0,
+                cy: 0,
+                angle: 0
+            }];
+            anchorIndex = 0;
+            exposedLeft = starterTile.w1;
+            exposedRight = starterTile.w2;
+            lastPlacedId = starterTile.id;
+
+            // Shuffle remaining N-1 tiles into player's hand
+            pool = shuffleArray(fullDeck.slice(1));
+            clearSelectedTile();
+
+            // UI setup
+            uiModeTag.textContent = MODE_LABELS[selectedPieceCount];
+            screenSetup.classList.add('hidden');
+            screenSetup.classList.remove('flex');
+            screenEnd.classList.add('hidden');
+            screenEnd.classList.remove('flex');
+
+            screenGame.classList.remove('hidden');
+            screenGame.classList.add('flex');
+
+            // Start precision timer
+            clearInterval(timerInterval);
+            elapsedSeconds = 0;
+            startTimePerf = performance.now();
+            isGameActive = true;
+            uiTime.textContent = '00:00.0';
+
+            timerInterval = setInterval(() => {
+                if (!isGameActive) return;
+                elapsedSeconds = (performance.now() - startTimePerf) / 1000;
+                uiTime.textContent = formatTimeTenths(elapsedSeconds);
+            }, 100);
+
+            renderBoard();
+            renderPool();
+            updateRemainingUI();
+        }
+
+        function updateRemainingUI() {
+            uiRemaining.textContent = pool.length;
+        }
+
+        // --- 8. MOVE VALIDATION & PLACEMENT ---
+        function clearSelectedTile() {
+            selectedHandPieceId = null;
+            selectedHint.classList.add('hidden');
+            document.querySelectorAll('.domino-piece.selected-tile').forEach(el => {
+                el.classList.remove('selected-tile');
+            });
+            document.querySelectorAll('.drop-zone.ready-target').forEach(el => {
+                el.classList.remove('ready-target');
+            });
+        }
+
+        function toggleSelectHandTile(pieceId) {
+            if (!isGameActive) return;
+            if (selectedHandPieceId === pieceId) {
+                clearSelectedTile();
+                return;
+            }
+            clearSelectedTile();
+            selectedHandPieceId = pieceId;
+            const tileEl = document.getElementById(pieceId);
+            if (tileEl) tileEl.classList.add('selected-tile');
+            selectedHint.classList.remove('hidden');
+            document.querySelectorAll('.drop-zone').forEach(dz => dz.classList.add('ready-target'));
+        }
+
+        function attemptPlaceTile(pieceId, side, dropZoneEl = null) {
+            if (!isGameActive) return;
+            const pieceIndex = pool.findIndex(p => p.id === pieceId);
+            if (pieceIndex === -1) return;
+
+            const piece = pool[pieceIndex];
+            let matched = false;
+            let orientedTile = null;
+
+            if (side === 'left') {
+                // New tile's right half (w2) must connect to board's exposedLeft
+                if (matches(piece.w2, exposedLeft)) {
+                    matched = true;
+                    orientedTile = { w1: piece.w1, w2: piece.w2, originalId: piece.id };
+                    exposedLeft = piece.w1;
+                } else if (matches(piece.w1, exposedLeft)) {
+                    matched = true;
+                    orientedTile = { w1: piece.w2, w2: piece.w1, originalId: piece.id };
+                    exposedLeft = piece.w2;
+                }
+
+                if (matched) {
+                    board.unshift(orientedTile);
+                    anchorIndex++; // Shift anchor index since we prepended at 0
+                    pool.splice(pieceIndex, 1);
+                    lastPlacedId = piece.id;
+                    clearSelectedTile();
+                    onSuccessfulMove('left');
+                    return;
+                }
+            } else if (side === 'right') {
+                // New tile's left half (w1) must connect to board's exposedRight
+                if (matches(piece.w1, exposedRight)) {
+                    matched = true;
+                    orientedTile = { w1: piece.w1, w2: piece.w2, originalId: piece.id };
+                    exposedRight = piece.w2;
+                } else if (matches(piece.w2, exposedRight)) {
+                    matched = true;
+                    orientedTile = { w1: piece.w2, w2: piece.w1, originalId: piece.id };
+                    exposedRight = piece.w1;
+                }
+
+                if (matched) {
+                    board.push(orientedTile);
+                    pool.splice(pieceIndex, 1);
+                    lastPlacedId = piece.id;
+                    clearSelectedTile();
+                    onSuccessfulMove('right');
+                    return;
+                }
+            }
+
+            // Invalid match feedback
+            const targetDz = dropZoneEl || document.querySelector(`.drop-zone[data-side="${side}"]`);
+            if (targetDz) {
+                targetDz.classList.remove('shake-zone');
+                void targetDz.offsetWidth; // Reflow to restart animation
+                targetDz.classList.add('shake-zone');
+            }
+            const targetWord = side === 'left' ? exposedLeft : exposedRight;
+            showComicToast(`Não encaixa com "${targetWord.toUpperCase()}"! 💥`, true);
+        }
+
+        function onSuccessfulMove(side) {
+            renderBoard();
+            renderPool();
+            updateRemainingUI();
+
+            // Smoothly scroll viewport toward the newly placed end
+            requestAnimationFrame(() => {
+                const focusTile = side === 'left' ? board[0] : board[board.length - 1];
+                if (focusTile) {
+                    boardContainer.scrollTo({
+                        left: Math.max(0, focusTile.cx - boardContainer.clientWidth / 2),
+                        top: Math.max(0, focusTile.cy - boardContainer.clientHeight / 2),
+                        behavior: 'smooth'
+                    });
+                }
+            });
+
+            checkEndConditions();
+        }
+
+        function checkEndConditions() {
+            // 1. Victory: all tiles played
+            if (pool.length === 0) {
+                finishGame(true);
+                return;
+            }
+
+            // 2. Game Over (Stuck): no remaining tile in hand matches either open end
+            const hasValidMove = pool.some(tile =>
+                matches(tile.w1, exposedLeft) ||
+                matches(tile.w2, exposedLeft) ||
+                matches(tile.w1, exposedRight) ||
+                matches(tile.w2, exposedRight)
+            );
+
+            if (!hasValidMove) {
+                finishGame(false);
+            }
+        }
+
+        function finishGame(isVictory) {
+            isGameActive = false;
+            clearInterval(timerInterval);
+            elapsedSeconds = (performance.now() - startTimePerf) / 1000;
+            uiTime.textContent = formatTimeTenths(elapsedSeconds);
+
+            const unplayedCount = pool.length;
+            const penaltySeconds = unplayedCount * 5;
+            const finalScoreTime = elapsedSeconds + penaltySeconds;
+
+            const isNewRecord = saveBestRecord(selectedPieceCount, finalScoreTime);
+            const bestForMode = getBestRecord(selectedPieceCount);
+
+            const endTitle = document.getElementById('end-title');
+            const endSubtitle = document.getElementById('end-subtitle');
+            const recordBadge = document.getElementById('end-record-badge');
+
+            if (isVictory) {
+                endTitle.textContent = 'VITÓRIA! 🎉';
+                endSubtitle.textContent = 'Você conectou todas as preposições!';
+                endSubtitle.className = 'text-xl mb-5 font-comic text-green-600';
+            } else {
+                endTitle.textContent = 'SEM MOVIMENTOS! 🛑';
+                endSubtitle.textContent = 'Nenhuma peça restante encaixa nas pontas.';
+                endSubtitle.className = 'text-xl mb-5 font-comic text-red-600';
+            }
+
+            recordBadge.classList.toggle('hidden', !isNewRecord);
+
+            document.getElementById('stat-mode').textContent = MODE_LABELS[selectedPieceCount];
+            document.getElementById('stat-base-time').textContent = formatTimeTenths(elapsedSeconds);
+            document.getElementById('stat-penalty').textContent = `${unplayedCount} × 5s = +${penaltySeconds.toFixed(1)}s`;
+            document.getElementById('stat-total-time').textContent = formatTimeTenths(finalScoreTime);
+            document.getElementById('stat-best-time').textContent = bestForMode !== null ? formatTimeTenths(bestForMode) : '--';
+
+            setTimeout(() => {
+                screenEnd.classList.remove('hidden');
+                screenEnd.classList.add('flex');
+            }, 350);
+        }
+
+        // --- 9. SNAKE / BOUSTROPHEDON LAYOUT ENGINE ---
+        function getOutPort(tile) {
+            // Port corresponding to w2
+            if (tile.angle === 0) return { x: tile.cx + HALF_W, y: tile.cy };
+            if (tile.angle === 90) return { x: tile.cx, y: tile.cy + HALF_W };
+            if (tile.angle === 180) return { x: tile.cx - HALF_W, y: tile.cy };
+            return { x: tile.cx, y: tile.cy - HALF_W }; // 270
+        }
+
+        function getInPort(tile) {
+            // Port corresponding to w1
+            if (tile.angle === 0) return { x: tile.cx - HALF_W, y: tile.cy };
+            if (tile.angle === 90) return { x: tile.cx, y: tile.cy - HALF_W };
+            if (tile.angle === 180) return { x: tile.cx + HALF_W, y: tile.cy };
+            return { x: tile.cx, y: tile.cy + HALF_W }; // 270
+        }
+
+        function computeNextRightPose(tailTile, prevToTailTile, usableWidth, margin) {
+            const outPort = getOutPort(tailTile);
+            let nextAngle = tailTile.angle;
+
+            if (tailTile.angle === 0 && outPort.x + TILE_W > usableWidth - margin) {
+                nextAngle = 90; // Curve downward at right edge
+            } else if (tailTile.angle === 180 && outPort.x - TILE_W < margin) {
+                nextAngle = 90; // Curve downward at left edge
+            } else if (tailTile.angle === 90) {
+                // Reverse horizontal direction after vertical turn
+                if (prevToTailTile && prevToTailTile.angle === 0) nextAngle = 180;
+                else if (prevToTailTile && prevToTailTile.angle === 180) nextAngle = 0;
+                else nextAngle = 180;
+            }
+
+            let cx, cy;
+            if (nextAngle === 0) {
+                cx = outPort.x + HALF_W;
+                cy = outPort.y;
+            } else if (nextAngle === 90) {
+                cx = outPort.x;
+                cy = outPort.y + HALF_W;
+            } else if (nextAngle === 180) {
+                cx = outPort.x - HALF_W;
+                cy = outPort.y;
+            } else {
+                cx = outPort.x;
+                cy = outPort.y - HALF_W;
+            }
+
+            return { cx, cy, angle: nextAngle };
+        }
+
+        function computeNextLeftPose(headTile, nextToHeadTile, usableWidth, margin) {
+            const inPort = getInPort(headTile);
+            let nextAngle = headTile.angle;
+
+            if (headTile.angle === 0 && inPort.x - TILE_W < margin) {
+                nextAngle = 90; // Curve upward at left edge (w2 at bottom connects to head's w1)
+            } else if (headTile.angle === 180 && inPort.x + TILE_W > usableWidth - margin) {
+                nextAngle = 90; // Curve upward at right edge
+            } else if (headTile.angle === 90) {
+                // Reverse horizontal direction after vertical upward turn
+                if (nextToHeadTile && nextToHeadTile.angle === 0) nextAngle = 180;
+                else if (nextToHeadTile && nextToHeadTile.angle === 180) nextAngle = 0;
+                else nextAngle = 180;
+            }
+
+            let cx, cy;
+            if (nextAngle === 0) {
+                cx = inPort.x - HALF_W;
+                cy = inPort.y;
+            } else if (nextAngle === 90) {
+                // At 90deg, outPort (w2) is at (cx, cy + HALF_W), connecting to head's inPort
+                cx = inPort.x;
+                cy = inPort.y - HALF_W;
+            } else if (nextAngle === 180) {
+                // At 180deg, outPort (w2) is at (cx - HALF_W, cy), connecting to head's inPort
+                cx = inPort.x + HALF_W;
+                cy = inPort.y;
+            } else {
+                cx = inPort.x;
+                cy = inPort.y + HALF_W;
+            }
+
+            return { cx, cy, angle: nextAngle };
+        }
+
+        function computeBoardLayout() {
+            if (board.length === 0) return { leftZone: null, rightZone: null };
+
+            const containerW = Math.max(boardContainer.clientWidth, 420);
+            const margin = 48;
+
+            // 1. Anchor tile starts horizontally centered
+            board[anchorIndex].cx = containerW / 2;
+            board[anchorIndex].cy = 200;
+            board[anchorIndex].angle = 0;
+
+            // 2. Grow rightward from anchorIndex
+            for (let i = anchorIndex + 1; i < board.length; i++) {
+                const tail = board[i - 1];
+                const prev = i - 2 >= anchorIndex ? board[i - 2] : null;
+                const pose = computeNextRightPose(tail, prev, containerW, margin);
+                board[i].cx = pose.cx;
+                board[i].cy = pose.cy;
+                board[i].angle = pose.angle;
+            }
+
+            // 3. Grow leftward from anchorIndex
+            for (let i = anchorIndex - 1; i >= 0; i--) {
+                const head = board[i + 1];
+                const next = i + 2 <= anchorIndex ? board[i + 2] : null;
+                const pose = computeNextLeftPose(head, next, containerW, margin);
+                board[i].cx = pose.cx;
+                board[i].cy = pose.cy;
+                board[i].angle = pose.angle;
+            }
+
+            // 4. Compute drop zone poses at both open ends
+            const rightZone = computeNextRightPose(
+                board[board.length - 1],
+                board.length >= 2 ? board[board.length - 2] : null,
+                containerW,
+                margin
+            );
+            const leftZone = computeNextLeftPose(
+                board[0],
+                board.length >= 2 ? board[1] : null,
+                containerW,
+                margin
+            );
+
+            // 5. Normalize bounding box so nothing ever clips above Y=0 or left of X=0
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            const includeBox = (cx, cy, angle) => {
+                const w = (angle === 0 || angle === 180) ? TILE_W : TILE_H;
+                const h = (angle === 0 || angle === 180) ? TILE_H : TILE_W;
+                minX = Math.min(minX, cx - w / 2);
+                minY = Math.min(minY, cy - h / 2);
+                maxX = Math.max(maxX, cx + w / 2);
+                maxY = Math.max(maxY, cy + h / 2);
+            };
+
+            board.forEach(t => includeBox(t.cx, t.cy, t.angle));
+            includeBox(leftZone.cx, leftZone.cy, leftZone.angle);
+            includeBox(rightZone.cx, rightZone.cy, rightZone.angle);
+
+            const pad = 48;
+            const shiftX = minX < pad ? pad - minX : 0;
+            const shiftY = minY < pad ? pad - minY : 0;
+
+            if (shiftX !== 0 || shiftY !== 0) {
+                board.forEach(t => {
+                    t.cx += shiftX;
+                    t.cy += shiftY;
+                });
+                leftZone.cx += shiftX;
+                leftZone.cy += shiftY;
+                rightZone.cx += shiftX;
+                rightZone.cy += shiftY;
+            }
+
+            boardEl.style.width = `${Math.max(containerW, maxX + shiftX + pad)}px`;
+            boardEl.style.height = `${Math.max(boardContainer.clientHeight, maxY + shiftY + pad)}px`;
+
+            return { leftZone, rightZone };
+        }
+
+        // --- 10. RENDERING & DRAG/TOUCH HANDLERS ---
+        function createDropZoneElement(side, pose) {
+            const dz = document.createElement('div');
+            dz.className = 'drop-zone absolute';
+            dz.setAttribute('data-side', side);
+            dz.style.left = `${pose.cx}px`;
+            dz.style.top = `${pose.cy}px`;
+            dz.style.transform = `translate(-50%, -50%) rotate(${pose.angle}deg)`;
+
+            if (selectedHandPieceId) {
+                dz.classList.add('ready-target');
+            }
+
+            // Keep label upright even when zone is rotated 90deg
+            const inner = document.createElement('div');
+            inner.style.transform = `rotate(${-pose.angle}deg)`;
+            inner.className = 'flex flex-col items-center leading-tight pointer-events-none';
+            inner.innerHTML = `<span class="text-sm sm:text-base tracking-wide">SOLTE AQUI</span>`;
+            dz.appendChild(inner);
+
+            // Desktop Drag & Drop events
+            dz.addEventListener('dragover', e => {
+                e.preventDefault();
+                dz.classList.add('hover');
+            });
+
+            dz.addEventListener('dragleave', () => {
+                dz.classList.remove('hover');
+            });
+
+            dz.addEventListener('drop', e => {
+                e.preventDefault();
+                dz.classList.remove('hover');
+                const pieceId = e.dataTransfer.getData('text/plain');
+                if (pieceId) {
+                    attemptPlaceTile(pieceId, side, dz);
+                }
+            });
+
+            // Tap-to-place fallback
+            dz.addEventListener('click', () => {
+                if (selectedHandPieceId) {
+                    attemptPlaceTile(selectedHandPieceId, side, dz);
+                } else {
+                    showComicToast('Selecione ou arraste uma peça da sua mão! 👆', false);
+                }
+            });
+
+            return dz;
+        }
+
+        function createPieceElement(pData, isHandPiece) {
+            const dom = document.createElement('div');
+            dom.id = pData.originalId || pData.id;
+            dom.className = isHandPiece ? 'domino-piece' : 'domino-piece absolute';
+
+            if (!isHandPiece) {
+                dom.style.left = `${pData.cx}px`;
+                dom.style.top = `${pData.cy}px`;
+                dom.style.transform = `translate(-50%, -50%) rotate(${pData.angle}deg)`;
+                if (pData.originalId === lastPlacedId) {
+                    dom.classList.add('snap-effect');
+                }
+            }
+
+            const half1 = document.createElement('div');
+            half1.className = 'domino-half left';
+            half1.style.backgroundColor = COLORS[pData.w1];
+            if (!isHandPiece && pData.angle === 180) {
+                half1.style.transform = 'rotate(180deg)';
+            }
+            half1.textContent = pData.w1.toUpperCase();
+
+            const half2 = document.createElement('div');
+            half2.className = 'domino-half right';
+            half2.style.backgroundColor = COLORS[pData.w2];
+            if (!isHandPiece && pData.angle === 180) {
+                half2.style.transform = 'rotate(180deg)';
+            }
+            half2.textContent = pData.w2.toUpperCase();
+
+            dom.appendChild(half1);
+            dom.appendChild(half2);
+
+            if (isHandPiece) {
+                dom.draggable = true;
+
+                // Desktop HTML5 Drag
+                dom.addEventListener('dragstart', e => {
+                    e.dataTransfer.setData('text/plain', pData.id);
+                    e.dataTransfer.effectAllowed = 'move';
+                    dom.classList.add('dragging');
+                    clearSelectedTile();
+                });
+
+                dom.addEventListener('dragend', () => {
+                    dom.classList.remove('dragging');
+                });
+
+                // Tap-to-select fallback
+                dom.addEventListener('click', () => {
+                    toggleSelectHandTile(pData.id);
+                });
+
+                // Mobile / Tablet Touch Drag
+                dom.addEventListener('touchstart', e => handleTouchStart(e, pData, dom), { passive: false });
+            }
+
+            return dom;
+        }
+
+        // --- 11. MOBILE TOUCH DRAG SUPPORT ---
+        function handleTouchStart(e, pData, dom) {
+            if (!isGameActive || e.touches.length !== 1) return;
+            const touch = e.touches[0];
+            activeTouchPieceId = pData.id;
+
+            let moved = false;
+            const startX = touch.clientX;
+            const startY = touch.clientY;
+
+            const onTouchMove = moveEvent => {
+                const t = moveEvent.touches[0];
+                if (!moved && (Math.abs(t.clientX - startX) > 8 || Math.abs(t.clientY - startY) > 8)) {
+                    moved = true;
+                    clearSelectedTile();
+                    dom.classList.add('dragging');
+                    touchGhostEl = createPieceElement(pData, false);
+                    touchGhostEl.id = 'touch-ghost';
+                    touchGhostEl.style.transform = 'translate(-50%, -50%) rotate(-4deg) scale(1.06)';
+                    document.body.appendChild(touchGhostEl);
+                }
+
+                if (moved && touchGhostEl) {
+                    moveEvent.preventDefault();
+                    touchGhostEl.style.left = `${t.clientX}px`;
+                    touchGhostEl.style.top = `${t.clientY}px`;
+
+                    // Highlight hovered drop zone
+                    const elemBelow = document.elementFromPoint(t.clientX, t.clientY);
+                    const dz = elemBelow ? elemBelow.closest('.drop-zone') : null;
+                    document.querySelectorAll('.drop-zone').forEach(z => z.classList.toggle('hover', z === dz));
+                }
+            };
+
+            const onTouchEnd = endEvent => {
+                document.removeEventListener('touchmove', onTouchMove);
+                document.removeEventListener('touchend', onTouchEnd);
+                dom.classList.remove('dragging');
+
+                if (touchGhostEl) {
+                    touchGhostEl.remove();
+                    touchGhostEl = null;
+                }
+
+                document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('hover'));
+
+                if (moved && endEvent.changedTouches.length > 0) {
+                    const t = endEvent.changedTouches[0];
+                    const elemBelow = document.elementFromPoint(t.clientX, t.clientY);
+                    const dz = elemBelow ? elemBelow.closest('.drop-zone') : null;
+                    if (dz) {
+                        const side = dz.getAttribute('data-side');
+                        attemptPlaceTile(activeTouchPieceId, side, dz);
+                    }
+                }
+                activeTouchPieceId = null;
+            };
+
+            document.addEventListener('touchmove', onTouchMove, { passive: false });
+            document.addEventListener('touchend', onTouchEnd);
+        }
+
+        function renderBoard() {
+            boardEl.innerHTML = '';
+            if (board.length === 0) return;
+
+            const { leftZone, rightZone } = computeBoardLayout();
+
+            // Left Open End Drop Zone
+            if (leftZone) {
+                boardEl.appendChild(createDropZoneElement('left', leftZone));
+            }
+
+            // Placed Domino Tiles
+            board.forEach(tile => {
+                boardEl.appendChild(createPieceElement(tile, false));
+            });
+
+            // Right Open End Drop Zone
+            if (rightZone) {
+                boardEl.appendChild(createDropZoneElement('right', rightZone));
+            }
+        }
+
+        function renderPool() {
+            poolEl.innerHTML = '';
+            pool.forEach(tile => {
+                poolEl.appendChild(createPieceElement(tile, true));
+            });
+        }
+
+        // Recalculate snake curves cleanly on window resize
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                if (isGameActive && board.length > 0) {
+                    renderBoard();
+                }
+            }, 120);
+        });
+
+        // Initialize setup badges on load
+        refreshRecordBadges();
+    </script>
+</body>
+</html>
