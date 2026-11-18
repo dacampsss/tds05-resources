@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java Maze Bug Hunt: 5 Stages Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #090d16;
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            user-select: none;
+        }
+        .code-line {
+            transition: background-color 0.14s ease, padding-left 0.14s ease, border-color 0.14s ease;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+        }
+        .code-line:hover {
+            background-color: rgba(56, 189, 248, 0.16);
+            padding-left: 10px;
+            border-left: 3px solid #38bdf8;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+        .line-wrong {
+            background-color: rgba(239, 68, 68, 0.28) !important;
+            border-left: 3px solid #ef4444 !important;
+            animation: shake 0.3s ease-in-out;
+        }
+        .line-correct {
+            background-color: rgba(34, 197, 94, 0.3) !important;
+            border-left: 3px solid #22c55e !important;
+        }
+        .stage-card {
+            transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .stage-card:hover {
+            transform: translateY(-3px);
+            border-color: #facc15;
+            box-shadow: 0 10px 25px -5px rgba(250, 204, 21, 0.2);
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+
+    <!-- TELA INICIAL: SELEÇÃO DE FASE -->
+    <div id="screen-setup" class="max-w-4xl w-full bg-slate-900/95 border-2 border-slate-700 rounded-3xl p-6 sm:p-8 shadow-2xl">
+        <div class="text-center mb-6">
+            <span class="inline-block bg-amber-500/15 border border-amber-400/40 text-amber-300 text-xs font-bold px-3.5 py-1 rounded-full mb-2 tracking-wider uppercase">
+                English for IT • Java Code Review Maze
+            </span>
+            <h1 class="text-3xl sm:text-5xl font-black text-yellow-400 tracking-wide">
+                JAVA MAZE BUG HUNT ☕🕵️‍♂️
+            </h1>
+            <p class="text-sm sm:text-base text-slate-300 mt-2 max-w-2xl mx-auto">
+                Escolha uma das <strong>5 fases</strong> abaixo. Cada fase apresenta um labirinto e um conjunto exclusivo de <strong>4 classes Java</strong> contendo usos corretos de quantificadores misturados com bugs gramaticais.
+            </p>
+        </div>
+
+        <div id="stages-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+            <!-- Cards das 5 fases injetados via JS -->
+        </div>
+
+        <div class="text-center text-xs text-slate-400 pt-2 border-t border-slate-800">
+            ⏱️ O cronômetro roda de forma invisível durante a partida e é revelado apenas ao chegar no <strong>EXIT</strong>!
+        </div>
+    </div>
+
+    <!-- TELA DO JOGO -->
+    <div id="screen-game" class="hidden flex-col items-center justify-center w-full">
+        <div class="mb-4 text-center max-w-xl w-full">
+            <div class="flex items-center justify-between gap-2 mb-2">
+                <button onclick="returnToMenu()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold px-3 py-1.5 rounded-lg border border-slate-600 cursor-pointer">
+                    ← Trocar Fase
+                </button>
+                <span id="current-stage-badge" class="bg-amber-500/15 border border-amber-400/40 text-amber-300 text-xs font-bold px-3 py-1 rounded-full uppercase">
+                    Fase 1
+                </span>
+            </div>
+
+            <h2 class="text-2xl sm:text-3xl font-black text-yellow-400 tracking-wide">
+                JAVA MAZE BUG HUNT ☕
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-400 mt-1">
+                Use as <strong>setas do teclado</strong> ou <strong>WASD</strong> para chegar até <span class="text-green-400 font-bold">EXIT</span>.
+            </p>
+
+            <div class="flex flex-wrap gap-3 justify-center mt-3 text-xs sm:text-sm font-bold">
+                <div class="bg-slate-900 px-3.5 py-1.5 rounded-lg border border-slate-700 shadow">
+                    Bugs Corrigidos: <span id="score" class="text-green-400 text-base">0</span> / <span id="total-bugs">4</span>
+                </div>
+                <div class="bg-slate-900 px-3.5 py-1.5 rounded-lg border border-slate-700 shadow">
+                    Status: <span id="status" class="text-sky-400">Aguardando movimento...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Container do Labirinto -->
+        <div class="relative bg-slate-900 border-4 border-slate-700 rounded-2xl p-2.5 shadow-[0_0_40px_rgba(15,23,42,0.9)]">
+            <canvas id="mazeCanvas" width="440" height="440" class="block bg-slate-950 rounded-xl"></canvas>
+        </div>
+
+        <!-- Controles Touch / Mobile -->
+        <div class="grid grid-cols-3 gap-2 mt-4 sm:hidden">
+            <div></div>
+            <button onclick="movePlayer(0, -1)" class="bg-slate-800 active:bg-slate-700 border border-slate-600 rounded-lg p-3 font-bold">▲</button>
+            <div></div>
+            <button onclick="movePlayer(-1, 0)" class="bg-slate-800 active:bg-slate-700 border border-slate-600 rounded-lg p-3 font-bold">◀</button>
+            <button onclick="movePlayer(0, 1)" class="bg-slate-800 active:bg-slate-700 border border-slate-600 rounded-lg p-3 font-bold">▼</button>
+            <button onclick="movePlayer(1, 0)" class="bg-slate-800 active:bg-slate-700 border border-slate-600 rounded-lg p-3 font-bold">▶</button>
+        </div>
+    </div>
+
+    <!-- POPUP DE CODE REVIEW (JAVA) -->
+    <div id="code-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-xs hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border-2 border-red-500/80 rounded-2xl max-w-3xl w-full p-5 sm:p-6 shadow-2xl">
+            <div class="flex flex-wrap justify-between items-center border-b border-slate-700 pb-3 mb-3 gap-2">
+                <div class="flex items-center gap-2">
+                    <span class="bg-red-500 text-white text-xs font-black px-2.5 py-1 rounded uppercase">Bug Alert</span>
+                    <h3 id="file-title" class="text-lg font-mono font-bold text-amber-300">File.java</h3>
+                </div>
+                <span class="text-xs bg-slate-800 text-slate-300 border border-slate-600 px-3 py-1 rounded-full">
+                    Clique na linha com erro gramatical
+                </span>
+            </div>
+
+            <p class="text-xs sm:text-sm text-slate-300 mb-3">
+                Esta classe Java mistura usos <strong>corretos</strong> de quantificadores com <strong>1 erro gramatical</strong>. Passe o mouse sobre as linhas para iluminar e clique na linha incorreta:
+            </p>
+
+            <div id="code-container" class="bg-[#0b101b] border border-slate-700 rounded-xl p-3 sm:p-4 font-mono text-xs sm:text-sm overflow-x-auto max-h-[60vh] overflow-y-auto space-y-0.5 mb-3">
+                <!-- Linhas Java injetadas via JS -->
+            </div>
+
+            <div id="feedback-msg" class="text-center font-bold text-sm min-h-[24px]"></div>
+        </div>
+    </div>
+
+    <!-- MODAL DE COMEMORAÇÃO FINAL (REVELA O TIMER INVISÍVEL) -->
+    <div id="win-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border-4 border-emerald-400 rounded-2xl max-w-md w-full p-7 text-center shadow-[0_0_50px_rgba(16,185,129,0.35)]">
+            <div id="new-record-pill" class="hidden inline-block bg-yellow-400 text-slate-950 text-xs font-black px-3 py-1 rounded-full uppercase mb-2">
+                🏆 Novo Recorde nesta Fase!
+            </div>
+            <div class="text-5xl mb-2">🎉☕🚀</div>
+            <h2 class="text-3xl sm:text-4xl font-black text-emerald-400 mb-1">
+                FASE CONCLUÍDA!
+            </h2>
+            <p id="win-stage-name" class="text-amber-300 font-bold text-sm mb-3">Fase 1</p>
+            <p class="text-slate-300 text-sm mb-5">
+                Parabéns! Você atravessou todo o labirinto e corrigiu todos os bugs de Inglês Instrumental no código Java!
+            </p>
+
+            <div class="bg-slate-950 border-2 border-slate-700 rounded-xl p-4 mb-6 space-y-2">
+                <div class="text-xs uppercase tracking-widest text-slate-400 font-bold">Tempo Total (Cronômetro Oculto)</div>
+                <div id="final-time" class="text-4xl font-mono font-black text-yellow-300">00:00.0s</div>
+                <div class="text-xs text-slate-400 pt-2 border-t border-slate-800 flex justify-between px-2">
+                    <span>Bugs corrigidos: <strong id="final-bugs" class="text-emerald-400">4/4</strong></span>
+                    <span>Cliques errados: <strong id="final-mistakes" class="text-rose-400">0</strong></span>
+                </div>
+                <div class="text-xs text-slate-500 pt-1">
+                    Melhor tempo na fase: <strong id="final-best" class="text-slate-300">--</strong>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button onclick="returnToMenu()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-4 rounded-xl border border-slate-600 transition-all uppercase text-xs tracking-wider cursor-pointer">
+                    Escolher Outra Fase
+                </button>
+                <button onclick="restartCurrentStage()" class="flex-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-3 px-4 rounded-xl transition-all shadow-lg uppercase text-xs tracking-wider cursor-pointer">
+                    Jogar Fase Novamente 🔄
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. MAPAS DE LABIRINTO (11x11) ---
+        const MAZE_MAPS = [
+            // Mapa 0 (Serpentina clássica)
+            [
+                [0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+                [0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0],
+                [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1],
+                [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+                [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2]
+            ],
+            // Mapa 1 (Espiral / corredores alternados)
+            [
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+                [0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0],
+                [0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0],
+                [0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0],
+                [0, 1, 0, 1, 2, 1, 0, 0, 0, 1, 0],
+                [0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0],
+                [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            ],
+            // Mapa 2 (Zigue-zague vertical)
+            [
+                [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
+                [1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+                [0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0],
+                [0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+                [1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0],
+                [0, 0, 0, 0, 0, 0, 1, 2, 0, 0, 0]
+            ]
+        ];
+
+        // --- 2. AS 5 FASES TEMÁTICAS (20 CLASSES JAVA COMPLETAS) ---
+        const STAGES = [
+            {
+                id: 1,
+                title: "Fase 1: Cloud & Servers",
+                focus: "Many vs. Much (Infraestrutura & Rede)",
+                badgeColor: "text-sky-400 border-sky-500/40 bg-sky-500/10",
+                mapIndex: 0,
+                challenges: [
+                    {
+                        fileName: "CloudClusterManager.java",
+                        lines: [
+                            "package com.enterprise.infra.cluster;",
+                            "",
+                            "public class CloudClusterManager {",
+                            "    private int activeNodes = 24;",
+                            "    private double availableBandwidthMbps = 12.5;",
+                            "    private int criticalAlerts = 2;",
+                            "",
+                            "    public void runHealthDiagnostics() {",
+                            "        System.out.println(\"[INFO] Starting cluster health check...\");",
+                            "        if (this.activeNodes > 10) {",
+                            "            System.out.println(\"Status: We have many servers running smoothly.\");",
+                            "        }",
+                            "        if (this.criticalAlerts > 0 && this.criticalAlerts < 5) {",
+                            "            System.out.println(\"Notice: There are not many alerts in the queue.\");",
+                            "        }",
+                            "        if (this.availableBandwidthMbps < 20.0) {",
+                            "            System.err.println(\"Alert: Too many bandwidth is being consumed right now!\");",
+                            "            throttleBackgroundJobs();",
+                            "        }",
+                            "    }",
+                            "}"
+                        ],
+                        errorIndex: 16,
+                        explanation: "'Bandwidth' é incontável! O correto é 'Too much bandwidth'."
+                    },
+                    {
+                        fileName: "LoadBalancerRouter.java",
+                        lines: [
+                            "package com.enterprise.network.balancer;",
+                            "",
+                            "import java.util.List;",
+                            "",
+                            "public class LoadBalancerRouter {",
+                            "    private int incomingRequests = 9500;",
+                            "    private double networkTrafficGbps = 8.4;",
+                            "",
+                            "    public void distributeTraffic(List<String> endpoints) {",
+                            "        if (this.networkTrafficGbps > 5.0) {",
+                            "            System.out.println(\"[NET] High load: Much traffic is hitting the gateway.\");",
+                            "        }",
+                            "        if (this.incomingRequests > 5000) {",
+                            "            System.out.println(\"[NET] Scaling up: Many requests are waiting in line.\");",
+                            "        }",
+                            "        if (endpoints.size() < 3) {",
+                            "            System.err.println(\"[WARN] Routing failed: We do not have much endpoints active.\");",
+                            "            triggerAutoScaling();",
+                            "        }",
+                            "    }",
+                            "}"
+                        ],
+                        errorIndex: 16,
+                        explanation: "'Endpoints' é contável plural! Use 'many endpoints'."
+                    },
+                    {
+                        fileName: "ContainerOrchestrator.java",
+                        lines: [
+                            "package com.enterprise.cloud.containers;",
+                            "",
+                            "public class ContainerOrchestrator {",
+                            "    private int runningPods = 60;",
+                            "    private double cpuTimeSeconds = 420.8;",
+                            "",
+                            "    public void auditPodMetrics() {",
+                            "        System.out.println(\"[AUDIT] Collecting Kubernetes pod telemetry...\");",
+                            "        if (this.runningPods > 50) {",
+                            "            System.out.println(\"Cluster Info: Many containers are currently healthy.\");",
+                            "        }",
+                            "        if (this.cpuTimeSeconds > 300.0) {",
+                            "            System.out.println(\"CPU Report: The worker nodes spent much time compiling.\");",
+                            "        }",
+                            "        if (hasZombieProcesses()) {",
+                            "            System.err.println(\"Error: Much orphaned processes were found on node-04.\");",
+                            "        }",
+                            "    }",
+                            "}"
+                        ],
+                        errorIndex: 15,
+                        explanation: "'Processes' é contável no plural! O correto é 'Many orphaned processes'."
+                    },
+                    {
+                        fileName: "DnsCacheResolver.java",
+                        lines: [
+                            "package com.enterprise.network.dns;",
+                            "",
+                            "public class DnsCacheResolver {",
+                            "    private int cachedRecords = 1400;",
+                            "    private double latencyMs = 185.4;",
+                            "",
+                            "    public void evaluateLookupSpeed(String domain) {",
+                            "        System.out.println(\"Resolving host: \" + domain);",
+                            "        if (this.cachedRecords > 1000) {",
+                            "            System.out.println(\"Cache Hit: Many DNS records are stored locally.\");",
+                            "        }",
+                            "        if (this.latencyMs > 150.0) {",
+                            "            System.out.println(\"Lag Warning: The upstream server took too many time to respond.\");",
+                            "            switchPrimaryResolver();",
+                            "        }",
+                            "        System.out.println(\"Lookup cycle completed.\");",
+                            "    }",
+                            "}"
+                        ],
+                        errorIndex: 12,
+                        explanation: "'Time' (no sentido de duração) é incontável! Use 'too much time'."
+                    }
+                ]
+            },
+            {
+                id: 2,
+                title: "Fase 2: Memory & Storage",
+                focus: "Few vs. Little / A few vs. A little",
+                badgeColor: "text-emerald-400 border-emerald-500/40 bg-emerald-500/10",
+                mapIndex: 1,
+                challenges: [
+                    {
+                        fileName: "DatabaseBackupService.java",
+                        lines: [
+                            "package com.enterprise.storage.backup;",
+                            "",
+                            "public class DatabaseBackupService {",
+                            "    private long freeDiskSpaceMB = 450;",
+                            "    private int availableSnapshots = 2;",
+                            "",
+                            "    public boolean executeNightlySnapshot() {",
+                            "        System.out.println(\"[BACKUP] Initializing nightly disk verification...\");",
+                            "        if (this.availableSnapshots > 0) {",
+                            "            System.out.println(\"Info: We still have a few snapshots from last week.\");",
+                            "        }",
+                            "        if (this.freeDiskSpaceMB < 1024) {",
+                            "            System.err.println(\"Critical: The volume has too few storage left for backups.\");",
+                            "            return false;",
+                            "        }",
+                            "        System.out.println(\"Snapshot process finished.\");",
+                            "        return true;",
+                            "    }",
+                            "}"
+                        ],
+                        errorIndex: 12,
+                        explanation: "'Storage' é incontável! Use 'too little storage'."
+                    },
+                    {
+                        fileName: "JvmHeapMonitor.java",
+                        lines: [
+                            "package com.enterprise.runtime.memory;",
+                            "",
+                            "public class JvmHeapMonitor {",
+                            "    private long freeRamMB = 128;",
+                            "    private int activeThreads = 3;",
+                            "",
+                            "    public void checkGarbageCollector() {",
+                            "        System.out.println(\"[JVM] Inspecting heap allocation...\");",
+                            "        if (this.activeThreads < 5) {",
+                            "            System.out.println(\"Status: Only a few worker threads are currently busy.\");",
+                            "        }",
+                            "        if (this.freeRamMB < 256) {",
+                            "            System.err.println(\"OutOfMemoryRisk: There is very few RAM available for new objects.\");",
+                            "            System.gc();",
+                            "        }",
+                            "        System.out.println(\"Heap inspection complete.\");",
+                            "    }",
+                            "}"
+                        ],
+                        errorIndex: 12,
+                        explanation: "'RAM' (memória) é incontável! O correto é 'very little RAM'."
+                    },
+                    {
+                        fileName: "FileSystemCleaner.java",
+                        lines: [
+                            "package com.enterprise.os.filesystem;",
+                            "",
+                            "public class FileSystemCleaner {",
+                            "    private int tempLogFiles = 4;",
+                            "    private double freeCacheSpaceGB = 0.3;",
+                            "",
+                            "    public void purgeOldDirectories() {",
+                            "        if (this.freeCacheSpaceGB < 1.0) {",
+                            "            System.out.println(\"Disk Alert: Very little space remains on /tmp partition.\");",
+                            "        }",
+                            "        if (this.tempLogFiles > 0) {",
+                            "            System.out.println(\"Cleanup: We only need to delete a little temporary files.\");",
+                            "            removeFiles();",
+                            "        }",
+                            "        System.out.println(\"Partition cleanup finished successfully.\");",
+                            "    }",
+                            "}"
+                        ],
+                        errorIndex: 11,
+                        explanation: "'Files' é contável plural! Use 'a few temporary files'."
+                    },
+                    {
+                        fileName: "BatteryPowerController.java",
+                        lines: [
+                            "package com.enterprise.hardware.power;",
+                            "",
+                            "public class BatteryPowerController {",
+                            "    private int chargePercentage = 9;",
+                            "    private int connectedPeripherals = 2;",
+                            "",
+                            "    public void evaluateUpsStatus() {",
+                            "        if (this.connectedPeripherals <= 2) {",
+                            "            System.out.println(\"UPS Info: Few devices are drawing power right now.\");",
+                            "        }",
+                            "        if (this.chargePercentage < 15) {",
+                            "            System.out.println(\"Power Alert: We have a little battery power left.\");",
+                            "            System.err.println(\"Action: Shutting down because there are too little minutes remaining.\");",
+                            "        }",
+                            "    }",
+                            "}"
+                        ],
+                        errorIndex: 12,
+                        explanation: "'Minutes' é contável plural! Use 'too few minutes'."
+                    }
+                ]
+            },
+            {
+                id: 3,
+                title: "Fase 3: Partitives & Uncountables",
+                focus: "Advice, Hardware, Software, Data & Information",
+                badgeColor: "text-purple-400 border-purple-500/40 bg-purple-500/10",
+                mapIndex: 2,
+                challenges: [
+                    {
+                        fileName: "DeploymentPipelineRunner.java",
+                        lines: [
+                            "package com.enterprise.devops.pipeline;",
+                            "",
+                            "public class DeploymentPipelineRunner {",
+                            "    private int unitTestsPassed = 142;",
+                            "    private int legacyConfigFiles = 3;",
+                            "",
+                            "    public void deployProductionBuild(String version) {",
+                            "        System.out.println(\"[DEPLOY] Preparing release \" + version);",
+                            "        if (this.unitTestsPassed > 100) {",
+                            "            System.out.println(\"QA Verified: All automated tests passed successfully.\");",
+                            "        }",
+                            "        if (this.legacyConfigFiles > 0) {",
+                            "            System.out.println(\"Cleanup: There are only a few legacy files remaining.\");",
+                            "        }",
+                            "        String review = getArchitectReview();",
+                            "        if (review != null) {",
+                            "            System.out.println(\"Note: The senior architect gave us two helpful advices.\");",
+                            "        }",
+                            "        System.out.println(\"[DEPLOY] Release \" + version + \" is now live!\");",
+                            "    }",
+                            "}"
+                        ],
+                        errorIndex: 16,
+                        explanation: "'Advice' é incontável e nunca leva -s ('advices')! Use 'two pieces of helpful advice'."
+                    },
+                    {
+                        fileName: "DataWarehouseImporter.java",
+                        lines: [
+                            "package com.enterprise.analytics.etl;",
+                            "",
+                            "public class DataWarehouseImporter {",
+                            "    private int csvBatches = 5;",
+                            "    private boolean corruptedPayload = true;",
+                            "",
+                            "    public void processIncomingFeed() {",
+                            "        System.out.println(\"[ETL] Reading \" + this.csvBatches + \" CSV batches...\");",
+                            "        if (this.csvBatches > 1) {",
+                            "            System.out.println(\"Batch Info: Several files were queued for ingestion.\");",
+                            "        }",
+                            "        if (this.corruptedPayload) {",
+                            "            System.err.println(\"Validation Error: We found three corrupted datas in the stream.\");",
+                            "            quarantineRecord();",
+                            "        }",
+                            "        System.out.println(\"ETL job completed.\");",
+                            "    }",
+                            "}"
+                        ],
+                        errorIndex: 12,
+                        explanation: "'Data' não recebe plural com -s ('datas')! Use 'three pieces/items of corrupted data'."
+                    },
+                    {
+                        fileName: "AssetInventoryService.java",
+                        lines: [
+                            "package com.enterprise.it.inventory;",
+                            "",
+                            "public class AssetInventoryService {",
+                            "    private int newWorkstations = 8;",
+                            "    private int installedLicenses = 12;",
+                            "",
+                            "    public void generateHardwareReport() {",
+                            "        System.out.println(\"[INVENTORY] Auditing office equipment...\");",
+                            "        if (this.newWorkstations > 0) {",
+                            "            System.out.println(\"Stock: We purchased eight new laptops this month.\");",
+                            "        }",
+                            "        if (this.installedLicenses > 10) {",
+                            "            System.out.println(\"Licensing: Many software tools are already activated.\");",
+                            "        }",
+                            "        if (hasLegacyMachines()) {",
+                            "            System.out.println(\"Upgrade Needed: Two old hardwares must be replaced soon.\");",
+                            "        }",
+                            "    }",
+                            "}"
+                        ],
+                        errorIndex: 15,
+                        explanation: "'Hardware' é incontável e não vai para o plural ('hardwares')! Use 'Two pieces of old hardware'."
+                    },
+                    {
+                        fileName: "SecurityIncidentLogger.java",
+                        lines: [
+                            "package com.enterprise.secops.incident;",
+                            "",
+                            "public class SecurityIncidentLogger {",
+                            "    private int blockedIps = 19;",
+                            "",
+                            "    public void exportForensicSummary() {",
+                            "        System.out.println(\"[FORENSICS] Compiling threat intelligence...\");",
+                            "        if (this.blockedIps > 10) {",
+                            "            System.out.println(\"Firewall: Blocked many suspicious IP addresses.\");",
+                            "        }",
+                            "        String intel = fetchThreatFeed();",
+                            "        if (intel != null) {",
+                            "            System.out.println(\"Intel: We received a bit of useful information from CERT.\");",
+                            "            System.out.println(\"Report: Please attach all sensitive informations to the ticket.\");",
+                            "        }",
+                            "    }",
+                            "}"
+                        ],
+                        errorIndex: 13,
+                        explanation: "'Information' é incontável e não aceita plural ('informations')! Use 'all sensitive information'."
+                    }
+                ]
+            },
+            {
+                id: 4,
+                title: "Fase 4: All, No & None of",
+                focus: "Extremos (100% vs. 0%) e Determinantes",
+                badgeColor: "text-amber-400 border-amber-500/40 bg-amber-500/10",
+                mapIndex: 0,
+                challenges: [
+                    {
+                        fileName: "MicroserviceHealthChecker.java",
+                        lines: [
+                            "package com.enterprise.mesh.health;",
+                            "",
+                            "import java.util.List;",
+                            "",
+                            "public class MicroserviceHealthChecker {",
+                            "    public void pingAllServices(List<String> services) {",
+                            "        System.out.println(\"[MESH] Pinging registered microservices...\");",
+                            "        if (allOnline(services)) {",
+                            "            System.out.println(\"Healthy: All services are responding within SLA.\");",
+                            "        }",
+                            "        if (getErrorCount() == 0) {",
+                            "            System.out.println(\"Clean: There are no errors in the gateway log.\");",
+                            "        }",
+                            "        if (isMaintenanceWindow()) {",
+                            "            System.out.println(\"Notice: No of the external APIs are accepting writes.\");",
+                            "        }",
+                            "    }",
+                            "}"
+                        ],
+                        errorIndex: 14,
+                        explanation: "Antes de 'of the...', usa-se 'None of' ('None of the external APIs'), nunca 'No of'!"
+                    },
+                    {
+                        fileName: "PaymentTransactionValidator.java",
+                        lines: [
+                            "package com.enterprise.fintech.payments;",
+                            "",
+                            "public class PaymentTransactionValidator {",
+                            "    private double fraudulentAmount = 0.0;",
+                            "    private int rejectedCards = 0;",
+                            "",
+                            "    public boolean validateBatch() {",
+                            "        System.out.println(\"[PAY] Starting anti-fraud verification...\");",
+                            "        if (this.fraudulentAmount == 0.0) {",
+                            "            System.out.println(\"Approved: None of this money comes from flagged accounts.\");",
+                            "        }",
+                            "        if (this.rejectedCards == 0) {",
+                            "            System.out.println(\"Status: None of the transactions were declined.\");",
+                            "        }",
+                            "        if (isLedgerBalanced()) {",
+                            "            System.out.println(\"Audit: There is none pending balance left in escrow.\");",
+                            "        }",
+                            "        return true;",
+                            "    }",
+                            "}"
+                        ],
+                        errorIndex: 15,
+                        explanation: "Diretamente antes de substantivo sem artigo/pronome, usa-se 'no' ('no pending balance'), não 'none'!"
+                    },
+                    {
+                        fileName: "UserPermissionAuditor.java",
+                        lines: [
+                            "package com.enterprise.iam.permissions;",
+                            "",
+                            "public class UserPermissionAuditor {",
+                            "    private int guestAccounts = 0;",
+                            "    private int adminUsers = 4;",
+                            "",
+                            "    public void checkAccessControl() {",
+                            "        System.out.println(\"[IAM] Auditing role-based access control...\");",
+                            "        if (this.adminUsers == 4) {",
+                            "            System.out.println(\"Security: All administrators have 2FA enabled.\");",
+                            "        }",
+                            "        if (this.guestAccounts == 0) {",
+                            "            System.out.println(\"Policy: There are no guest accounts on this server.\");",
+                            "        }",
+                            "        if (verifyRootTokens()) {",
+                            "            System.out.println(\"Alert: None these API keys have expiration dates!\");",
+                            "        }",
+                            "    }",
+                            "}"
+                        ],
+                        errorIndex: 15,
+                        explanation: "Antes do demonstrativo 'these', é obrigatório usar 'None of' ('None of these API keys')!"
+                    },
+                    {
+                        fileName: "DataEncryptionService.java",
+                        lines: [
+                            "package com.enterprise.crypto.vault;",
+                            "",
+                            "public class DataEncryptionService {",
+                            "    private int plainTextPasswords = 0;",
+                            "",
+                            "    public void verifyVaultCompliance() {",
+                            "        System.out.println(\"[VAULT] Checking AES-256 encryption state...\");",
+                            "        if (this.plainTextPasswords == 0) {",
+                            "            System.out.println(\"Compliant: No passwords are stored in plain text.\");",
+                            "            System.out.println(\"Verified: None of our secrets are exposed.\");",
+                            "        }",
+                            "        if (isBackupEncrypted()) {",
+                            "            System.out.println(\"Archive: All of the backup files is encrypted properly.\");",
+                            "        }",
+                            "    }",
+                            "}"
+                        ],
+                        errorIndex: 12,
+                        explanation: "'Backup files' é contável no plural, então o verbo deve concordar no plural: 'All of the backup files ARE encrypted'!"
+                    }
+                ]
+            },
+            {
+                id: 5,
+                title: "Fase 5: Senior Audit (Boss)",
+                focus: "Revisão Geral Avançada (Todos os Quantificadores)",
+                badgeColor: "text-rose-400 border-rose-500/40 bg-rose-500/10",
+                mapIndex: 1,
+                challenges: [
+                    {
+                        fileName: "ApiGatewaySecurityFilter.java",
+                        lines: [
+                            "package com.enterprise.security.gateway;",
+                            "",
+                            "public class ApiGatewaySecurityFilter {",
+                            "    private int failedAttempts = 18;",
+                            "    private double remainingBudget = 120.50;",
+                            "",
+                            "    public void inspectIncomingTraffic(String clientIp) {",
+                            "        System.out.println(\"[AUDIT] Inspecting traffic from \" + clientIp);",
+                            "        if (this.failedAttempts > 15) {",
+                            "            System.out.println(\"Blocked: Several invalid tokens were detected.\");",
+                            "            System.out.println(\"Action: Adding temporary firewall rules.\");",
+                            "        }",
+                            "        if (this.remainingBudget < 200.00) {",
+                            "            System.out.println(\"Finance Alert: We have very little money left in the budget.\");",
+                            "        }",
+                            "        if (isAuditComplete()) {",
+                            "            System.out.println(\"Report: Much security patches are still pending deployment.\");",
+                            "        }",
+                            "    }",
+                            "}"
+                        ],
+                        errorIndex: 16,
+                        explanation: "'Security patches' é contável no plural! O correto é 'Many security patches'."
+                    },
+                    {
+                        fileName: "QueryPerformanceOptimizer.java",
+                        lines: [
+                            "package com.enterprise.db.optimizer;",
+                            "",
+                            "public class QueryPerformanceOptimizer {",
+                            "    private int slowQueries = 2;",
+                            "    private double indexOverheadMB = 14.2;",
+                            "",
+                            "    public void analyzeExecutionPlan() {",
+                            "        System.out.println(\"[DB] Analyzing SQL execution metrics...\");",
+                            "        if (this.slowQueries < 5) {",
+                            "            System.out.println(\"Good News: Today we recorded fewer errors than yesterday.\");",
+                            "        }",
+                            "        if (this.indexOverheadMB < 20.0) {",
+                            "            System.out.println(\"Memory: The new index uses a bit of RAM for caching.\");",
+                            "        }",
+                            "        if (hasDeadlocks()) {",
+                            "            System.err.println(\"Warning: Several lock contention is slowing down writes.\");",
+                            "        }",
+                            "    }",
+                            "}"
+                        ],
+                        errorIndex: 15,
+                        explanation: "'Contention' é incontável singular! 'Several' só pode ser usado com substantivos contáveis no plural."
+                    },
+                    {
+                        fileName: "ReleaseNotesGenerator.java",
+                        lines: [
+                            "package com.enterprise.ci.release;",
+                            "",
+                            "public class ReleaseNotesGenerator {",
+                            "    private int resolvedIssues = 11;",
+                            "    private int breakingChanges = 0;",
+                            "",
+                            "    public void publishChangelog(String tag) {",
+                            "        System.out.println(\"Generating release notes for \" + tag);",
+                            "        if (this.resolvedIssues > 0) {",
+                            "            System.out.println(\"Summary: Many bugs were fixed in this sprint.\");",
+                            "        }",
+                            "        if (this.breakingChanges == 0) {",
+                            "            System.out.println(\"Compatibility: None of the public APIs were broken.\");",
+                            "        }",
+                            "        if (needsDocumentationUpdate()) {",
+                            "            System.out.println(\"Docs: Please add a few helpful documentation to the README.\");",
+                            "        }",
+                            "    }",
+                            "}"
+                        ],
+                        errorIndex: 15,
+                        explanation: "'Documentation' é incontável! Use 'a little helpful documentation' ou 'a piece of documentation'."
+                    },
+                    {
+                        fileName: "TelemetryStreamProcessor.java",
+                        lines: [
+                            "package com.enterprise.iot.telemetry;",
+                            "",
+                            "public class TelemetryStreamProcessor {",
+                            "    private int activeSensors = 320;",
+                            "    private double packetLossRate = 0.01;",
+                            "",
+                            "    public void processSensorBatch() {",
+                            "        System.out.println(\"[IOT] Ingesting telemetry from \" + this.activeSensors + \" sensors...\");",
+                            "        if (this.packetLossRate < 0.05) {",
+                            "            System.out.println(\"Network: Almost no data was lost during transmission.\");",
+                            "        }",
+                            "        if (this.activeSensors > 100) {",
+                            "            System.out.println(\"Scale: All sensors are transmitting every 5 seconds.\");",
+                            "        }",
+                            "        if (isBufferFull()) {",
+                            "            System.err.println(\"Overflow: Too many telemetry data arrived at once!\");",
+                            "        }",
+                            "    }",
+                            "}"
+                        ],
+                        errorIndex: 15,
+                        explanation: "'Data' é incontável! O correto é 'Too much telemetry data'."
+                    }
+                ]
+            }
+        ];
+
+        // --- 3. ESTADO DO JOGO ---
+        const canvas = document.getElementById('mazeCanvas');
+        const ctx = canvas.getContext('2d');
+        const tileSize = 40;
+        const gridCount = 11;
+
+        let currentStage = null;
+        let currentMap = null;
+        let activeChallenges = [];
+        let triggerSteps = [];
+
+        let player = { x: 0, y: 0 };
+        let stepsCount = 0;
+        let bugsResolved = 0;
+        let wrongLineClicks = 0;
+        let isModalOpen = false;
+        let isGameFinished = false;
+        let invisibleStartTime = null;
+
+        // --- 4. LOCALSTORAGE RECORDES ---
+        function getBestTime(stageId) {
+            const raw = localStorage.getItem(`java_maze_best_stage_${stageId}`);
+            return raw !== null ? parseFloat(raw) : null;
+        }
+
+        function saveBestTime(stageId, elapsedMs) {
+            const prev = getBestTime(stageId);
+            if (prev === null || elapsedMs < prev) {
+                localStorage.setItem(`java_maze_best_stage_${stageId}`, elapsedMs.toFixed(1));
+                return true;
+            }
+            return false;
+        }
+
+        function formatElapsedTime(ms) {
+            const totalSeconds = ms / 1000;
+            const mins = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+            const secs = Math.floor(totalSeconds % 60).toString().padStart(2, '0');
+            const tenths = Math.floor((totalSeconds * 10) % 10);
+            return `${mins}:${secs}.${tenths}s`;
+        }
+
+        // --- 5. RENDERIZAÇÃO DO MENU DE FASES ---
+        function renderStageSelection() {
+            const grid = document.getElementById('stages-grid');
+            grid.innerHTML = '';
+
+            STAGES.forEach(stage => {
+                const best = getBestTime(stage.id);
+                const card = document.createElement('div');
+                card.className = 'stage-card bg-slate-950 border-2 border-slate-700 rounded-2xl p-5 flex flex-col justify-between cursor-pointer';
+                card.onclick = () => startStage(stage.id);
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-black px-2.5 py-0.5 rounded-full border ${stage.badgeColor}">
+                                STAGE 0${stage.id}
+                            </span>
+                            <span class="text-xs text-slate-400 font-mono">4 Classes Java</span>
+                        </div>
+                        <h3 class="text-lg font-black text-white mb-1">${stage.title}</h3>
+                        <p class="text-xs text-slate-400 mb-4">${stage.focus}</p>
+                    </div>
+                    <div class="pt-3 border-t border-slate-800 flex justify-between items-center text-xs">
+                        <span class="text-slate-400">Recorde: <strong class="text-yellow-300 font-mono">${best !== null ? formatElapsedTime(best) : '--'}</strong></span>
+                        <span class="text-emerald-400 font-black uppercase">Jogar ▶</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function shuffle(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function generateTriggerSteps(count) {
+            const steps = [];
+            let current = 3 + Math.floor(Math.random() * 3); // 1º popup entre passos 3 e 5
+            for (let i = 0; i < count; i++) {
+                steps.push(current);
+                current += 5 + Math.floor(Math.random() * 4); // Próximos a cada 5 a 8 passos
+            }
+            return steps;
+        }
+
+        function startStage(stageId) {
+            currentStage = STAGES.find(s => s.id === stageId);
+            if (!currentStage) return;
+
+            currentMap = MAZE_MAPS[currentStage.mapIndex];
+            activeChallenges = shuffle([...currentStage.challenges]);
+            triggerSteps = generateTriggerSteps(activeChallenges.length);
+
+            player = { x: 0, y: 0 };
+            stepsCount = 0;
+            bugsResolved = 0;
+            wrongLineClicks = 0;
+            isModalOpen = false;
+            isGameFinished = false;
+            invisibleStartTime = null;
+
+            document.getElementById('current-stage-badge').textContent = currentStage.title;
+            document.getElementById('score').textContent = '0';
+            document.getElementById('total-bugs').textContent = activeChallenges.length;
+            document.getElementById('status').textContent = 'Aguardando movimento...';
+
+            document.getElementById('win-modal').classList.add('hidden');
+            document.getElementById('win-modal').classList.remove('flex');
+            document.getElementById('screen-setup').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
+            document.getElementById('screen-game').classList.add('flex');
+
+            drawMaze();
+        }
+
+        function restartCurrentStage() {
+            if (currentStage) startStage(currentStage.id);
+        }
+
+        function returnToMenu() {
+            isGameFinished = true;
+            isModalOpen = false;
+            document.getElementById('code-modal').classList.add('hidden');
+            document.getElementById('code-modal').classList.remove('flex');
+            document.getElementById('win-modal').classList.add('hidden');
+            document.getElementById('win-modal').classList.remove('flex');
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('flex');
+            document.getElementById('screen-setup').classList.remove('hidden');
+            renderStageSelection();
+        }
+
+        // --- 6. DESENHO DO LABIRINTO E MOVIMENTAÇÃO ---
+        function drawMaze() {
+            if (!currentMap) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let r = 0; r < gridCount; r++) {
+                for (let c = 0; c < gridCount; c++) {
+                    const x = c * tileSize;
+                    const y = r * tileSize;
+
+                    if (currentMap[r][c] === 1) {
+                        ctx.fillStyle = '#1e293b';
+                        ctx.fillRect(x, y, tileSize, tileSize);
+                        ctx.strokeStyle = '#334155';
+                        ctx.lineWidth = 1;
+                        ctx.strokeRect(x + 1, y + 1, tileSize - 2, tileSize - 2);
+                    } else if (currentMap[r][c] === 2) {
+                        ctx.fillStyle = '#16a34a';
+                        ctx.fillRect(x, y, tileSize, tileSize);
+                        ctx.fillStyle = '#ffffff';
+                        ctx.font = 'bold 11px sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('EXIT', x + tileSize / 2, y + tileSize / 2 + 4);
+                    } else {
+                        ctx.fillStyle = '#090d16';
+                        ctx.fillRect(x, y, tileSize, tileSize);
+                        ctx.strokeStyle = '#111827';
+                        ctx.lineWidth = 1;
+                        ctx.strokeRect(x, y, tileSize, tileSize);
+                    }
+                }
+            }
+
+            const px = player.x * tileSize + tileSize / 2;
+            const py = player.y * tileSize + tileSize / 2;
+
+            ctx.fillStyle = '#38bdf8';
+            ctx.beginPath();
+            ctx.arc(px, py, 13, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = '#e0f2fe';
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+        }
+
+        function movePlayer(dx, dy) {
+            if (!currentMap || isModalOpen || isGameFinished) return;
+
+            const newX = player.x + dx;
+            const newY = player.y + dy;
+
+            if (newX < 0 || newX >= gridCount || newY < 0 || newY >= gridCount) return;
+            if (currentMap[newY][newX] === 1) return;
+
+            // Inicia o cronômetro invisível no 1º movimento válido
+            if (invisibleStartTime === null) {
+                invisibleStartTime = performance.now();
+                document.getElementById('status').textContent = 'Explorando labirinto...';
+            }
+
+            player.x = newX;
+            player.y = newY;
+            stepsCount++;
+            drawMaze();
+
+            // Chegou no EXIT
+            if (currentMap[newY][newX] === 2) {
+                if (bugsResolved < activeChallenges.length) {
+                    openCodePopup(bugsResolved);
+                } else {
+                    completeGame();
+                }
+                return;
+            }
+
+            // Gatilho pseudo-aleatório de Code Review
+            if (bugsResolved < activeChallenges.length && stepsCount >= triggerSteps[bugsResolved]) {
+                openCodePopup(bugsResolved);
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (document.getElementById('screen-game').classList.contains('hidden')) return;
+            const key = e.key.toLowerCase();
+            if (e.key === 'ArrowUp' || key === 'w') {
+                e.preventDefault();
+                movePlayer(0, -1);
+            } else if (e.key === 'ArrowDown' || key === 's') {
+                e.preventDefault();
+                movePlayer(0, 1);
+            } else if (e.key === 'ArrowLeft' || key === 'a') {
+                e.preventDefault();
+                movePlayer(-1, 0);
+            } else if (e.key === 'ArrowRight' || key === 'd') {
+                e.preventDefault();
+                movePlayer(1, 0);
+            }
+        });
+
+        // --- 7. POPUP DE REVISÃO DE CÓDIGO JAVA ---
+        function openCodePopup(challengeIndex) {
+            isModalOpen = true;
+            const challenge = activeChallenges[challengeIndex];
+
+            document.getElementById('file-title').textContent = challenge.fileName;
+            document.getElementById('status').textContent = 'Revisando código Java...';
+
+            const container = document.getElementById('code-container');
+            const feedback = document.getElementById('feedback-msg');
+            container.innerHTML = '';
+            feedback.textContent = '';
+
+            let solvedCurrent = false;
+
+            challenge.lines.forEach((lineText, idx) => {
+                const lineDiv = document.createElement('div');
+                lineDiv.className = 'code-line px-2 py-1 rounded text-slate-200 flex items-start whitespace-pre';
+
+                const numSpan = document.createElement('span');
+                numSpan.className = 'text-slate-500 select-none w-7 text-right mr-3 shrink-0';
+                numSpan.textContent = idx + 1;
+
+                const codeSpan = document.createElement('span');
+                codeSpan.textContent = lineText || ' ';
+
+                lineDiv.appendChild(numSpan);
+                lineDiv.appendChild(codeSpan);
+
+                lineDiv.addEventListener('click', () => {
+                    if (solvedCurrent) return;
+
+                    if (idx === challenge.errorIndex) {
+                        solvedCurrent = true;
+                        lineDiv.classList.add('line-correct');
+                        feedback.textContent = `✅ Bug corrigido! ${challenge.explanation}`;
+                        feedback.className = 'text-center font-bold text-sm text-emerald-400 min-h-[24px]';
+
+                        bugsResolved++;
+                        document.getElementById('score').textContent = bugsResolved;
+
+                        setTimeout(() => {
+                            document.getElementById('code-modal').classList.remove('flex');
+                            document.getElementById('code-modal').classList.add('hidden');
+                            isModalOpen = false;
+                            document.getElementById('status').textContent = 'Explorando labirinto...';
+
+                            if (currentMap[player.y][player.x] === 2) {
+                                if (bugsResolved < activeChallenges.length) {
+                                    openCodePopup(bugsResolved);
+                                } else {
+                                    completeGame();
+                                }
+                            }
+                        }, 1850);
+                    } else {
+                        wrongLineClicks++;
+                        lineDiv.classList.remove('line-wrong');
+                        void lineDiv.offsetWidth;
+                        lineDiv.classList.add('line-wrong');
+
+                        feedback.textContent = '❌ Linha correta gramaticalmente! Procure o erro entre os substantivos e quantificadores.';
+                        feedback.className = 'text-center font-bold text-sm text-rose-400 min-h-[24px]';
+                    }
+                });
+
+                container.appendChild(lineDiv);
+            });
+
+            document.getElementById('code-modal').classList.remove('hidden');
+            document.getElementById('code-modal').classList.add('flex');
+        }
+
+        // --- 8. FINALIZAÇÃO E REVELAÇÃO DO TIMER ---
+        function completeGame() {
+            isGameFinished = true;
+            const elapsedMs = invisibleStartTime ? (performance.now() - invisibleStartTime) : 0;
+            const isRecord = saveBestTime(currentStage.id, elapsedMs);
+            const bestMs = getBestTime(currentStage.id);
+
+            document.getElementById('status').textContent = 'Fase Concluída!';
+            document.getElementById('win-stage-name').textContent = `${currentStage.title} — ${currentStage.focus}`;
+            document.getElementById('final-time').textContent = formatElapsedTime(elapsedMs);
+            document.getElementById('final-bugs').textContent = `${bugsResolved}/${activeChallenges.length}`;
+            document.getElementById('final-mistakes').textContent = wrongLineClicks;
+            document.getElementById('final-best').textContent = bestMs !== null ? formatElapsedTime(bestMs) : '--';
+            document.getElementById('new-record-pill').classList.toggle('hidden', !isRecord);
+
+            const winModal = document.getElementById('win-modal');
+            winModal.classList.remove('hidden');
+            winModal.classList.add('flex');
+        }
+
+        // Inicializa a tela de seleção de fases
+        renderStageSelection();
+    </script>
+</body>
+</html>
