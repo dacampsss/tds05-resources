@@ -1,11 +1,10 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Root Sorter: Affix Word Hall — Inglês Instrumental (HQ Edition)</title>
-    <!-- Google Fonts: Bangers para títulos HQ e Plus Jakarta Sans para máxima legibilidade -->
+    <!-- Google Fonts: Bangers para títulos/badges HQ e Plus Jakarta Sans para leitura nítida -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -15,8 +14,8 @@
             --ink-black: #111111;
             --comic-yellow: #FFD60A;
             --comic-blue: #3A86FF;
+            --comic-teal: #2EC4B6;
             --comic-red: #FF3B30;
-            --comic-green: #2EC4B6;
             --panel-bg: #FFFFFF;
         }
 
@@ -31,7 +30,7 @@
             background-color: var(--bg-paper);
             color: var(--ink-black);
             /* Retícula Ben-Day sutil estilo papel de HQ */
-            background-image: radial-gradient(rgba(17, 17, 17, 0.09) 1.3px, transparent 1.3px);
+            background-image: radial-gradient(rgba(17, 17, 17, 0.1) 1.3px, transparent 1.3px);
             background-size: 16px 16px;
             min-height: 100vh;
             display: flex;
@@ -95,7 +94,7 @@
                 1.5px 1.5px 0px var(--ink-black);
         }
 
-        /* Layout Containers */
+        /* Containers Principais */
         .container-start {
             max-width: 900px;
             width: 100%;
@@ -118,7 +117,7 @@
         }
 
         /* =====================================================================
-           TELA INICIAL (START)
+           TELA 1: INÍCIO (START)
         ===================================================================== */
         .start-header {
             background-color: var(--comic-yellow);
@@ -167,7 +166,6 @@
             gap: 20px;
         }
 
-        /* Seletor de Quantidade de Peças (7, 15, 25) */
         .mode-selector-box {
             background-color: #FFFFFF;
             padding: 18px;
@@ -241,7 +239,6 @@
             color: var(--ink-black);
         }
 
-        /* Regras da Missão */
         .rules-box {
             background-color: var(--bg-paper);
             padding: 20px;
@@ -290,7 +287,7 @@
         }
 
         .btn-play {
-            background-color: var(--comic-green);
+            background-color: var(--comic-teal);
             color: #FFFFFF;
             font-size: 2.1rem;
             padding: 14px 54px;
@@ -303,7 +300,7 @@
         }
 
         /* =====================================================================
-           TELA DE JOGO ATIVO
+           TELA 2: JOGO ATIVO (DOIS ESPAÇOS INTERATIVOS)
         ===================================================================== */
         .game-topbar {
             background-color: var(--comic-yellow);
@@ -488,7 +485,7 @@
             color: #4B5563;
         }
 
-        /* Cartão de Palavra Arrastável */
+        /* Cartão de Palavra Arrastável no Hall */
         .word-card {
             background-color: #FFFFFF;
             border: 3px solid var(--ink-black);
@@ -517,6 +514,7 @@
             cursor: grabbing;
         }
 
+        /* Garante que filhos internos não interceptem drag/click */
         .word-card > * {
             pointer-events: none;
         }
@@ -532,7 +530,7 @@
             opacity: 0.45;
         }
 
-        /* Destaques de Dica (Prefixo / Radical / Sufixo) */
+        /* Destaques de Dica Morfológica (Prefixo / Radical / Sufixo) */
         .affix-prefix {
             background-color: var(--comic-red);
             color: #FFFFFF;
@@ -546,15 +544,15 @@
             color: var(--ink-black);
             font-weight: 800;
             text-decoration: underline;
-            text-decoration-color: var(--comic-green);
+            text-decoration-color: var(--comic-teal);
             text-decoration-thickness: 3px;
             text-underline-offset: 3px;
             padding: 0 2px;
         }
 
         .affix-suffix {
-            background-color: var(--comic-yellow);
-            color: var(--ink-black);
+            background-color: var(--comic-teal);
+            color: #FFFFFF;
             border: 1.5px solid var(--ink-black);
             border-radius: 5px;
             padding: 1px 5px;
@@ -603,6 +601,7 @@
             transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
         }
 
+        /* Bloco inteiro do slot ocupado é uma única peça arrastável e clicável */
         .seq-slot.has-card {
             background-color: #FFFFFF;
             border-style: solid;
@@ -622,6 +621,7 @@
             cursor: grabbing;
         }
 
+        /* Todos os filhos internos (inclusive o número e o texto) deixam o evento passar para o slot inteiro */
         .seq-slot.has-card > * {
             pointer-events: none;
         }
@@ -637,14 +637,22 @@
             transform: scale(1.02);
         }
 
+        .seq-slot.has-card.is-selected-slot {
+            background-color: #DBEAFE;
+            border-color: var(--comic-blue);
+            box-shadow: 4px 4px 0px var(--comic-blue);
+        }
+
+        /* Badge numerado (01, 02, 03...) sempre visível à esquerda */
         .slot-number {
             flex-shrink: 0;
-            width: 30px;
-            height: 30px;
+            width: 32px;
+            height: 32px;
             border-radius: 8px;
             background-color: var(--comic-yellow);
             border: 2px solid var(--ink-black);
-            font-size: 0.82rem;
+            color: var(--ink-black);
+            font-size: 0.85rem;
             font-weight: 800;
             display: flex;
             align-items: center;
@@ -657,30 +665,25 @@
             color: #6B7280;
             flex: 1;
             text-align: center;
-        }
-
-        .seq-slot .word-card {
-            flex: 1;
-            border: none;
-            box-shadow: none;
-            padding: 4px 4px;
-            background: transparent;
-            width: 100%;
             pointer-events: none;
         }
 
-        .seq-slot .word-card:hover {
-            transform: none;
-            box-shadow: none;
+        .slot-word-content {
+            flex: 1;
+            font-size: 0.98rem;
+            font-weight: 800;
+            color: var(--ink-black);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1px;
+            padding: 2px 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
-        .seq-slot.has-card.is-selected-slot {
-            background-color: #DBEAFE;
-            border-color: var(--comic-blue);
-            box-shadow: 4px 4px 0px var(--comic-blue);
-        }
-
-        /* Animação de tremor ao errar a ordem */
+        /* Animação de tremor + borda vermelha ao errar a ordem */
         @keyframes comicShake {
             0%, 100% { transform: translateX(0); }
             15% { transform: translateX(-8px); }
@@ -695,11 +698,16 @@
             animation: comicShake 0.45s ease-in-out;
         }
 
+        .sequence-panel-error {
+            border-color: var(--comic-red) !important;
+            box-shadow: 5px 5px 0px var(--comic-red) !important;
+        }
+
         /* =====================================================================
-           TELA FINAL DE PARABÉNS (VICTORY)
+           TELA 3: PARABÉNS / VITÓRIA (VICTORY)
         ===================================================================== */
         .victory-header {
-            background-color: var(--comic-green);
+            background-color: var(--comic-teal);
             border-bottom: 3px solid var(--ink-black);
             border-radius: 13px 13px 0 0;
             padding: 26px 24px;
@@ -821,7 +829,7 @@
                 <span class="badge-pill">Inglês Instrumental • Morfologia HQ</span>
                 <h1 class="font-comic start-title title-stroke">ROOT SORTER: AFFIX WORD HALL</h1>
                 <p class="start-subtitle">
-                    Arraste as palavras e organize-as em ordem alfabética pelo seu <span class="highlight-tag">RADICAL</span>!
+                    Identifique o <span class="highlight-tag">RADICAL</span> de cada palavra de TI ignorando prefixos e sufixos, e organize tudo de <strong>A &rarr; Z</strong>!
                 </p>
             </div>
 
@@ -832,15 +840,15 @@
                     <div class="mode-grid" id="mode-selector-grid">
                         <button type="button" class="mode-btn" data-count="7">
                             <span class="font-comic mode-btn-title">7 PEÇAS</span>
-                            <span class="mode-btn-desc">Modo Rápido / Aquecimento</span>
+                            <span class="mode-btn-desc">Rápido / Aquecimento</span>
                         </button>
                         <button type="button" class="mode-btn is-active" data-count="15">
                             <span class="font-comic mode-btn-title">15 PEÇAS</span>
-                            <span class="mode-btn-desc">Modo Padrão (Recomendado)</span>
+                            <span class="mode-btn-desc">Padrão (Recomendado)</span>
                         </button>
                         <button type="button" class="mode-btn" data-count="25">
                             <span class="font-comic mode-btn-title">25 PEÇAS</span>
-                            <span class="mode-btn-desc">Modo Desafio / Hardcore</span>
+                            <span class="mode-btn-desc">Desafio / Hardcore</span>
                         </button>
                     </div>
                 </div>
@@ -852,25 +860,25 @@
                         <li>
                             <span class="step-num">1</span>
                             <span>
-                                Arraste (ou clique para mover) todas as <strong id="rule-count-a">15</strong> palavras do <strong>Hall de Palavras</strong> para a <strong>Sequência Alfabética por Radical</strong> (<strong id="rule-range">01 a 15</strong>). Você também pode devolver peças da sequência para o Hall.
+                                Arraste (ou clique para mover/trocar) todas as <strong id="rule-count-a">15</strong> palavras do <strong>Hall de Palavras</strong> para a <strong>Sequência Alfabética por Radical</strong> (<strong id="rule-range">01 a 15</strong>). Você também pode devolver qualquer peça para o Hall.
                             </span>
                         </li>
                         <li>
                             <span class="step-num">2</span>
                             <span>
-                                Ordene alfabeticamente (<strong>A &rarr; Z</strong>) pelo <strong>RADICAL</strong> da palavra, ignorando prefixos e sufixos (ex.: em <em>unbelievable</em>, o radical é <strong>believe</strong>; em <em>overloaded</em>, é <strong>load</strong>; em <em>deployment</em>, é <strong>deploy</strong>).
+                                Organize em ordem alfabética (<strong>A &rarr; Z</strong>) pelo <strong>RADICAL</strong> da palavra, ignorando prefixos (<em>un-, re-, over-, under-</em>) e sufixos (<em>-ion, -er, -able, -ible, -less, -ful, -ment, -ity</em>). Ex.: em <em>unbelievable</em>, o radical é <strong>believe</strong>; em <em>overloaded</em>, é <strong>load</strong>.
                             </span>
                         </li>
                         <li>
                             <span class="step-num">3</span>
                             <span>
-                                Quando todos os <strong id="rule-count-b">15</strong> espaços estiverem ocupados, a ordem é validada automaticamente. Se houver algo fora de ordem, um alerta visual aparece <strong>sem revelar qual palavra está errada</strong>.
+                                Quando todos os <strong id="rule-count-b">15</strong> espaços numerados estiverem preenchidos, a ordem é validada automaticamente. Se houver algo fora de ordem, o quadro alerta sem revelar qual palavra está errada.
                             </span>
                         </li>
                         <li>
                             <span class="step-num">4</span>
                             <span>
-                                <strong>Dica Oculta e Flag:</strong> Cronômetro e erros ficam ocultos durante o jogo. Após <strong>3 tentativas erradas</strong>, o sistema ativa uma dica destacando visualmente os prefixos e sufixos nas palavras, mas registra uma <strong>FLAG DE DICA</strong> na tela final de parabéns.
+                                <strong>Dica Oculta e Flag:</strong> Cronômetro e erros ficam ocultos durante o jogo. Após <strong>3 erros</strong>, uma dica visual separa prefixos, radicais e sufixos por cor, registrando uma <strong>FLAG</strong> na tela final.
                             </span>
                         </li>
                     </ul>
@@ -912,15 +920,15 @@
         <!-- Banner Inline de Erro -->
         <div id="error-banner" role="alert" class="comic-panel-sm alert-banner hidden">
             <span class="font-comic alert-badge">OPS!</span>
-            <span>OPS! ALGUMA PALAVRA ESTÁ FORA DA ORDEM ALFABÉTICA DOS RADICAIS! REORGANIZE.</span>
+            <span>Ordem incorreta! Verifique os radicais e reorganize as peças.</span>
         </div>
 
         <!-- Banner Inline de Dica (Ativado após 3 erros ocultos) -->
         <div id="hint-banner" class="comic-panel-sm hint-banner hidden">
-            <span>💡 DICA ATIVADA: Prefixos e sufixos destacados por cor! Ordene considerando apenas o radical sublinhado.</span>
+            <span>💡 DICA ATIVADA: Prefixos e sufixos destacados por cor! Ordene pelo radical em negrito/sublinhado.</span>
             <div class="legend-group">
                 <span class="affix-prefix">Prefixo</span>
-                <span style="background:#FFF;color:#111111;padding:1px 6px;border-radius:5px;border:1.5px solid #111111;">RADICAL</span>
+                <span style="background:#FFF;color:#111111;padding:1px 6px;border-radius:5px;border:1.5px solid #111111;font-weight:800;">RADICAL</span>
                 <span class="affix-suffix">Sufixo</span>
             </div>
         </div>
@@ -932,7 +940,7 @@
                 <div class="zone-header">
                     <div>
                         <h2 class="font-comic zone-title">HALL DE PALAVRAS</h2>
-                        <p class="zone-subtitle">Arraste daqui ou devolva peças para cá</p>
+                        <p class="zone-subtitle">Arraste ou clique para posicionar (ou devolva peças para cá)</p>
                     </div>
                     <span id="hall-count-badge" class="badge-pill" style="margin-bottom:0;">15</span>
                 </div>
@@ -943,11 +951,11 @@
             </div>
 
             <!-- ESPAÇO 2: SEQUÊNCIA ALFABÉTICA POR RADICAL (01 a N) -->
-            <div class="comic-panel zone-panel">
+            <div id="sequence-zone-panel" class="comic-panel zone-panel">
                 <div class="zone-header">
                     <div>
                         <h2 id="sequence-zone-title" class="font-comic zone-title">SEQUÊNCIA ALFABÉTICA POR RADICAL (01 A 15)</h2>
-                        <p class="zone-subtitle">Solte nos espaços numerados ou sobre outra peça para trocar de posição</p>
+                        <p class="zone-subtitle">Cada espaço mantém seu número (01 a N); arraste ou clique no bloco inteiro para mover/trocar</p>
                     </div>
                 </div>
 
@@ -973,16 +981,16 @@
 
             <div class="victory-body">
                 <div class="stats-row">
-                    <!-- Modo Jogado -->
+                    <!-- Peças Ordenadas -->
                     <div class="comic-panel-sm stat-card" style="background-color: var(--bg-paper);">
-                        <span class="stat-label">🎯 Modo Jogado</span>
+                        <span class="stat-label">🎯 Peças Ordenadas</span>
                         <div id="victory-mode" class="font-comic stat-big-value">15 PEÇAS</div>
                     </div>
 
                     <!-- Tempo Total -->
                     <div class="comic-panel-sm stat-card" style="background-color: var(--comic-yellow);">
                         <span class="stat-label">⏱️ Tempo Total</span>
-                        <div id="victory-time" class="font-comic stat-big-value">00m 00s</div>
+                        <div id="victory-time" class="font-comic stat-big-value">00:00</div>
                     </div>
 
                     <!-- Status de Flag -->
@@ -1029,101 +1037,105 @@
             "use strict";
 
             /**
-             * Dicionário vasto com 78 palavras técnicas / de TI em inglês utilizando
-             * os prefixos e sufixos trabalhados.
-             * REGRA CRÍTICA: Todos os 78 registros possuem `root` estritamente único
-             * para garantir zero ambiguidade alfabética mesmo no modo de 25 peças.
+             * Dicionário com 85 palavras técnicas / de TI em inglês utilizando
+             * prefixos (un-, re-, over-, under-) e sufixos (-ion, -er, -able, -ible, -less, -ful, -ment, -ity, -ed).
+             * REGRA CRÍTICA: Todos os 85 registros possuem `root` 100% único (sem empates alfabéticos).
+             * `displayRoot` preserva a grafia exata dentro de `word` (prefix + displayRoot + suffix === word).
              */
             const WORD_DICTIONARY = [
-                { word: "accessible", root: "access", parts: [{ text: "access", type: "root" }, { text: "ible", type: "suffix" }] },
-                { word: "availability", root: "available", parts: [{ text: "availabil", type: "root" }, { text: "ity", type: "suffix" }] },
-                { word: "unbelievable", root: "believe", parts: [{ text: "un", type: "prefix" }, { text: "believ", type: "root" }, { text: "able", type: "suffix" }] },
-                { word: "unbreakable", root: "break", parts: [{ text: "un", type: "prefix" }, { text: "break", type: "root" }, { text: "able", type: "suffix" }] },
-                { word: "builder", root: "build", parts: [{ text: "build", type: "root" }, { text: "er", type: "suffix" }] },
-                { word: "careful", root: "care", parts: [{ text: "care", type: "root" }, { text: "ful", type: "suffix" }] },
-                { word: "overcharge", root: "charge", parts: [{ text: "over", type: "prefix" }, { text: "charge", type: "root" }] },
-                { word: "uncheck", root: "check", parts: [{ text: "un", type: "prefix" }, { text: "check", type: "root" }] },
-                { word: "colorless", root: "color", parts: [{ text: "color", type: "root" }, { text: "less", type: "suffix" }] },
-                { word: "compatible", root: "compat", parts: [{ text: "compat", type: "root" }, { text: "ible", type: "suffix" }] },
-                { word: "compiler", root: "compile", parts: [{ text: "compil", type: "root" }, { text: "er", type: "suffix" }] },
-                { word: "complexity", root: "complex", parts: [{ text: "complex", type: "root" }, { text: "ity", type: "suffix" }] },
-                { word: "compression", root: "compress", parts: [{ text: "compress", type: "root" }, { text: "ion", type: "suffix" }] },
-                { word: "configuration", root: "configure", parts: [{ text: "configur", type: "root" }, { text: "ation", type: "suffix" }] },
-                { word: "connection", root: "connect", parts: [{ text: "connect", type: "root" }, { text: "ion", type: "suffix" }] },
-                { word: "connectivity", root: "connective", parts: [{ text: "connectiv", type: "root" }, { text: "ity", type: "suffix" }] },
-                { word: "uncover", root: "cover", parts: [{ text: "un", type: "prefix" }, { text: "cover", type: "root" }] },
-                { word: "debugger", root: "debug", parts: [{ text: "debugg", type: "root" }, { text: "er", type: "suffix" }] },
-                { word: "deployment", root: "deploy", parts: [{ text: "deploy", type: "root" }, { text: "ment", type: "suffix" }] },
-                { word: "designer", root: "design", parts: [{ text: "design", type: "root" }, { text: "er", type: "suffix" }] },
-                { word: "development", root: "develop", parts: [{ text: "develop", type: "root" }, { text: "ment", type: "suffix" }] },
-                { word: "undo", root: "do", parts: [{ text: "un", type: "prefix" }, { text: "do", type: "root" }] },
-                { word: "encryption", root: "encrypt", parts: [{ text: "encrypt", type: "root" }, { text: "ion", type: "suffix" }] },
-                { word: "endless", root: "end", parts: [{ text: "end", type: "root" }, { text: "less", type: "suffix" }] },
-                { word: "underestimation", root: "estimate", parts: [{ text: "under", type: "prefix" }, { text: "estimat", type: "root" }, { text: "ion", type: "suffix" }] },
-                { word: "execution", root: "execute", parts: [{ text: "execut", type: "root" }, { text: "ion", type: "suffix" }] },
-                { word: "fearless", root: "fear", parts: [{ text: "fear", type: "root" }, { text: "less", type: "suffix" }] },
-                { word: "flexible", root: "flex", parts: [{ text: "flex", type: "root" }, { text: "ible", type: "suffix" }] },
-                { word: "overflow", root: "flow", parts: [{ text: "over", type: "prefix" }, { text: "flow", type: "root" }] },
-                { word: "unfold", root: "fold", parts: [{ text: "un", type: "prefix" }, { text: "fold", type: "root" }] },
-                { word: "reformat", root: "format", parts: [{ text: "re", type: "prefix" }, { text: "format", type: "root" }] },
-                { word: "harmless", root: "harm", parts: [{ text: "harm", type: "root" }, { text: "less", type: "suffix" }] },
-                { word: "overheat", root: "heat", parts: [{ text: "over", type: "prefix" }, { text: "heat", type: "root" }] },
-                { word: "helpful", root: "help", parts: [{ text: "help", type: "root" }, { text: "ful", type: "suffix" }] },
-                { word: "hopeless", root: "hope", parts: [{ text: "hope", type: "root" }, { text: "less", type: "suffix" }] },
-                { word: "inspection", root: "inspect", parts: [{ text: "inspect", type: "root" }, { text: "ion", type: "suffix" }] },
-                { word: "uninstall", root: "install", parts: [{ text: "un", type: "prefix" }, { text: "install", type: "root" }] },
-                { word: "joyful", root: "joy", parts: [{ text: "joy", type: "root" }, { text: "ful", type: "suffix" }] },
-                { word: "overloaded", root: "load", parts: [{ text: "over", type: "prefix" }, { text: "load", type: "root" }, { text: "ed", type: "suffix" }] },
-                { word: "unlock", root: "lock", parts: [{ text: "un", type: "prefix" }, { text: "lock", type: "root" }] },
-                { word: "maintainable", root: "maintain", parts: [{ text: "maintain", type: "root" }, { text: "able", type: "suffix" }] },
-                { word: "management", root: "manage", parts: [{ text: "manage", type: "root" }, { text: "ment", type: "suffix" }] },
-                { word: "painful", root: "pain", parts: [{ text: "pain", type: "root" }, { text: "ful", type: "suffix" }] },
-                { word: "peaceful", root: "peace", parts: [{ text: "peace", type: "root" }, { text: "ful", type: "suffix" }] },
-                { word: "replaceable", root: "place", parts: [{ text: "re", type: "prefix" }, { text: "place", type: "root" }, { text: "able", type: "suffix" }] },
-                { word: "portable", root: "port", parts: [{ text: "port", type: "root" }, { text: "able", type: "suffix" }] },
-                { word: "powerful", root: "power", parts: [{ text: "power", type: "root" }, { text: "ful", type: "suffix" }] },
-                { word: "unpredictable", root: "predict", parts: [{ text: "un", type: "prefix" }, { text: "predict", type: "root" }, { text: "able", type: "suffix" }] },
-                { word: "printer", root: "print", parts: [{ text: "print", type: "root" }, { text: "er", type: "suffix" }] },
-                { word: "programmer", root: "program", parts: [{ text: "programm", type: "root" }, { text: "er", type: "suffix" }] },
-                { word: "protection", root: "protect", parts: [{ text: "protect", type: "root" }, { text: "ion", type: "suffix" }] },
-                { word: "underrate", root: "rate", parts: [{ text: "under", type: "prefix" }, { text: "rate", type: "root" }] },
-                { word: "overreaction", root: "react", parts: [{ text: "over", type: "prefix" }, { text: "react", type: "root" }, { text: "ion", type: "suffix" }] },
-                { word: "readable", root: "read", parts: [{ text: "read", type: "root" }, { text: "able", type: "suffix" }] },
-                { word: "reliability", root: "reliable", parts: [{ text: "reliabil", type: "root" }, { text: "ity", type: "suffix" }] },
-                { word: "unreliable", root: "rely", parts: [{ text: "un", type: "prefix" }, { text: "reli", type: "root" }, { text: "able", type: "suffix" }] },
-                { word: "restless", root: "rest", parts: [{ text: "rest", type: "root" }, { text: "less", type: "suffix" }] },
-                { word: "router", root: "route", parts: [{ text: "rout", type: "root" }, { text: "er", type: "suffix" }] },
-                { word: "scalable", root: "scale", parts: [{ text: "scal", type: "root" }, { text: "able", type: "suffix" }] },
-                { word: "scanner", root: "scan", parts: [{ text: "scann", type: "root" }, { text: "er", type: "suffix" }] },
-                { word: "security", root: "secure", parts: [{ text: "secur", type: "root" }, { text: "ity", type: "suffix" }] },
-                { word: "selection", root: "select", parts: [{ text: "select", type: "root" }, { text: "ion", type: "suffix" }] },
-                { word: "serverless", root: "server", parts: [{ text: "server", type: "root" }, { text: "less", type: "suffix" }] },
-                { word: "spotless", root: "spot", parts: [{ text: "spot", type: "root" }, { text: "less", type: "suffix" }] },
-                { word: "understandable", root: "stand", parts: [{ text: "under", type: "prefix" }, { text: "stand", type: "root" }, { text: "able", type: "suffix" }] },
-                { word: "stateless", root: "state", parts: [{ text: "state", type: "root" }, { text: "less", type: "suffix" }] },
-                { word: "statement", root: "stated", parts: [{ text: "state", type: "root" }, { text: "ment", type: "suffix" }] },
-                { word: "successful", root: "success", parts: [{ text: "success", type: "root" }, { text: "ful", type: "suffix" }] },
-                { word: "testable", root: "test", parts: [{ text: "test", type: "root" }, { text: "able", type: "suffix" }] },
-                { word: "thankful", root: "thank", parts: [{ text: "thank", type: "root" }, { text: "ful", type: "suffix" }] },
-                { word: "overthink", root: "think", parts: [{ text: "over", type: "prefix" }, { text: "think", type: "root" }] },
-                { word: "tracker", root: "track", parts: [{ text: "track", type: "root" }, { text: "er", type: "suffix" }] },
-                { word: "transmission", root: "transmit", parts: [{ text: "transmiss", type: "root" }, { text: "ion", type: "suffix" }] },
-                { word: "reusable", root: "use", parts: [{ text: "re", type: "prefix" }, { text: "us", type: "root" }, { text: "able", type: "suffix" }] },
-                { word: "underutilize", root: "utilize", parts: [{ text: "under", type: "prefix" }, { text: "utilize", type: "root" }] },
-                { word: "validation", root: "validate", parts: [{ text: "validat", type: "root" }, { text: "ion", type: "suffix" }] },
-                { word: "viewer", root: "view", parts: [{ text: "view", type: "root" }, { text: "er", type: "suffix" }] },
-                { word: "vulnerability", root: "vulnerable", parts: [{ text: "vulnerabil", type: "root" }, { text: "ity", type: "suffix" }] },
-                { word: "wireless", root: "wire", parts: [{ text: "wire", type: "root" }, { text: "less", type: "suffix" }] },
-                { word: "rewrite", root: "write", parts: [{ text: "re", type: "prefix" }, { text: "write", type: "root" }] },
-                { word: "unzip", root: "zip", parts: [{ text: "un", type: "prefix" }, { text: "zip", type: "root" }] }
+                { word: "accessible", prefix: "", root: "access", displayRoot: "access", suffix: "ible" },
+                { word: "overaction", prefix: "over", root: "act", displayRoot: "act", suffix: "ion" },
+                { word: "adaptable", prefix: "", root: "adapt", displayRoot: "adapt", suffix: "able" },
+                { word: "alignment", prefix: "", root: "align", displayRoot: "align", suffix: "ment" },
+                { word: "allocation", prefix: "", root: "allocate", displayRoot: "allocat", suffix: "ion" },
+                { word: "availability", prefix: "", root: "available", displayRoot: "availabil", suffix: "ity" },
+                { word: "unbelievable", prefix: "un", root: "believe", displayRoot: "believ", suffix: "able" },
+                { word: "reboot", prefix: "re", root: "boot", displayRoot: "boot", suffix: "" },
+                { word: "unbreakable", prefix: "un", root: "break", displayRoot: "break", suffix: "able" },
+                { word: "builder", prefix: "", root: "build", displayRoot: "build", suffix: "er" },
+                { word: "careful", prefix: "", root: "care", displayRoot: "care", suffix: "ful" },
+                { word: "overcharge", prefix: "over", root: "charge", displayRoot: "charge", suffix: "" },
+                { word: "uncheck", prefix: "un", root: "check", displayRoot: "check", suffix: "" },
+                { word: "overclock", prefix: "over", root: "clock", displayRoot: "clock", suffix: "" },
+                { word: "colorless", prefix: "", root: "color", displayRoot: "color", suffix: "less" },
+                { word: "compatible", prefix: "", root: "compat", displayRoot: "compat", suffix: "ible" },
+                { word: "compiler", prefix: "", root: "compile", displayRoot: "compil", suffix: "er" },
+                { word: "complexity", prefix: "", root: "complex", displayRoot: "complex", suffix: "ity" },
+                { word: "compression", prefix: "", root: "compress", displayRoot: "compress", suffix: "ion" },
+                { word: "reconfiguration", prefix: "re", root: "configure", displayRoot: "configur", suffix: "ation" },
+                { word: "connection", prefix: "", root: "connect", displayRoot: "connect", suffix: "ion" },
+                { word: "controller", prefix: "", root: "control", displayRoot: "controll", suffix: "er" },
+                { word: "uncover", prefix: "un", root: "cover", displayRoot: "cover", suffix: "" },
+                { word: "debugger", prefix: "", root: "debug", displayRoot: "debugg", suffix: "er" },
+                { word: "deployment", prefix: "", root: "deploy", displayRoot: "deploy", suffix: "ment" },
+                { word: "designer", prefix: "", root: "design", displayRoot: "design", suffix: "er" },
+                { word: "development", prefix: "", root: "develop", displayRoot: "develop", suffix: "ment" },
+                { word: "undo", prefix: "un", root: "do", displayRoot: "do", suffix: "" },
+                { word: "unencrypted", prefix: "un", root: "encrypt", displayRoot: "encrypt", suffix: "ed" },
+                { word: "endless", prefix: "", root: "end", displayRoot: "end", suffix: "less" },
+                { word: "underestimation", prefix: "under", root: "estimate", displayRoot: "estimat", suffix: "ion" },
+                { word: "execution", prefix: "", root: "execute", displayRoot: "execut", suffix: "ion" },
+                { word: "flexible", prefix: "", root: "flex", displayRoot: "flex", suffix: "ible" },
+                { word: "underflow", prefix: "under", root: "flow", displayRoot: "flow", suffix: "" },
+                { word: "unfold", prefix: "un", root: "fold", displayRoot: "fold", suffix: "" },
+                { word: "reformat", prefix: "re", root: "format", displayRoot: "format", suffix: "" },
+                { word: "harmless", prefix: "", root: "harm", displayRoot: "harm", suffix: "less" },
+                { word: "overheat", prefix: "over", root: "heat", displayRoot: "heat", suffix: "" },
+                { word: "helpful", prefix: "", root: "help", displayRoot: "help", suffix: "ful" },
+                { word: "hopeless", prefix: "", root: "hope", displayRoot: "hope", suffix: "less" },
+                { word: "inspection", prefix: "", root: "inspect", displayRoot: "inspect", suffix: "ion" },
+                { word: "uninstall", prefix: "un", root: "install", displayRoot: "install", suffix: "" },
+                { word: "joyful", prefix: "", root: "joy", displayRoot: "joy", suffix: "ful" },
+                { word: "overloaded", prefix: "over", root: "load", displayRoot: "load", suffix: "ed" },
+                { word: "unlock", prefix: "un", root: "lock", displayRoot: "lock", suffix: "" },
+                { word: "maintainable", prefix: "", root: "maintain", displayRoot: "maintain", suffix: "able" },
+                { word: "management", prefix: "", root: "manage", displayRoot: "manage", suffix: "ment" },
+                { word: "unmounted", prefix: "un", root: "mount", displayRoot: "mount", suffix: "ed" },
+                { word: "reopen", prefix: "re", root: "open", displayRoot: "open", suffix: "" },
+                { word: "painful", prefix: "", root: "pain", displayRoot: "pain", suffix: "ful" },
+                { word: "peaceful", prefix: "", root: "peace", displayRoot: "peace", suffix: "ful" },
+                { word: "replaceable", prefix: "re", root: "place", displayRoot: "place", suffix: "able" },
+                { word: "portable", prefix: "", root: "port", displayRoot: "port", suffix: "able" },
+                { word: "powerful", prefix: "", root: "power", displayRoot: "power", suffix: "ful" },
+                { word: "unpredictable", prefix: "un", root: "predict", displayRoot: "predict", suffix: "able" },
+                { word: "printer", prefix: "", root: "print", displayRoot: "print", suffix: "er" },
+                { word: "programmer", prefix: "", root: "program", displayRoot: "programm", suffix: "er" },
+                { word: "protection", prefix: "", root: "protect", displayRoot: "protect", suffix: "ion" },
+                { word: "underrate", prefix: "under", root: "rate", displayRoot: "rate", suffix: "" },
+                { word: "overreaction", prefix: "over", root: "react", displayRoot: "react", suffix: "ion" },
+                { word: "readable", prefix: "", root: "read", displayRoot: "read", suffix: "able" },
+                { word: "reliability", prefix: "", root: "reliable", displayRoot: "reliabil", suffix: "ity" },
+                { word: "unreliable", prefix: "un", root: "rely", displayRoot: "reli", suffix: "able" },
+                { word: "restless", prefix: "", root: "rest", displayRoot: "rest", suffix: "less" },
+                { word: "router", prefix: "", root: "route", displayRoot: "rout", suffix: "er" },
+                { word: "scalable", prefix: "", root: "scale", displayRoot: "scal", suffix: "able" },
+                { word: "scanner", prefix: "", root: "scan", displayRoot: "scann", suffix: "er" },
+                { word: "security", prefix: "", root: "secure", displayRoot: "secur", suffix: "ity" },
+                { word: "selection", prefix: "", root: "select", displayRoot: "select", suffix: "ion" },
+                { word: "serverless", prefix: "", root: "server", displayRoot: "server", suffix: "less" },
+                { word: "understandable", prefix: "under", root: "stand", displayRoot: "stand", suffix: "able" },
+                { word: "stateless", prefix: "", root: "state", displayRoot: "state", suffix: "less" },
+                { word: "successful", prefix: "", root: "success", displayRoot: "success", suffix: "ful" },
+                { word: "testable", prefix: "", root: "test", displayRoot: "test", suffix: "able" },
+                { word: "overthink", prefix: "over", root: "think", displayRoot: "think", suffix: "" },
+                { word: "tracker", prefix: "", root: "track", displayRoot: "track", suffix: "er" },
+                { word: "transmission", prefix: "", root: "transmit", displayRoot: "transmiss", suffix: "ion" },
+                { word: "useful", prefix: "", root: "use", displayRoot: "use", suffix: "ful" },
+                { word: "underutilize", prefix: "under", root: "utilize", displayRoot: "utilize", suffix: "" },
+                { word: "validation", prefix: "", root: "validate", displayRoot: "validat", suffix: "ion" },
+                { word: "viewer", prefix: "", root: "view", displayRoot: "view", suffix: "er" },
+                { word: "vulnerability", prefix: "", root: "vulnerable", displayRoot: "vulnerabil", suffix: "ity" },
+                { word: "wireless", prefix: "", root: "wire", displayRoot: "wire", suffix: "less" },
+                { word: "rewrite", prefix: "re", root: "write", displayRoot: "write", suffix: "" },
+                { word: "unzip", prefix: "un", root: "zip", displayRoot: "zip", suffix: "" }
             ];
 
             // Estado da Configuração e da Partida
-            let selectedPieceCount = 15; // Padrão: 15 peças (pode ser 7, 15 ou 25)
+            let selectedPieceCount = 15; // Padrão: 15 peças (7, 15 ou 25)
             let recentWords = [];
             let hallCards = [];
             let sequenceSlots = [];
-            let hiddenErrors = 0;
+            let errorCount = 0;
             let hintActive = false;
             let usedHintFlag = false;
             let roundStartTime = 0;
@@ -1144,6 +1156,7 @@
 
             const gameModeBadge = document.getElementById("game-mode-badge");
             const topbarInstruction = document.getElementById("topbar-instruction");
+            const sequenceZonePanel = document.getElementById("sequence-zone-panel");
             const sequenceZoneTitle = document.getElementById("sequence-zone-title");
             const hallDropzone = document.getElementById("hall-dropzone");
             const hallCountBadge = document.getElementById("hall-count-badge");
@@ -1154,7 +1167,7 @@
             const workspaceContainer = document.getElementById("workspace-container");
 
             /**
-             * Atualiza os textos da tela inicial quando o usuário alterna entre 7, 15 ou 25 peças
+             * Atualiza os textos da tela inicial quando o usuário escolhe 7, 15 ou 25 peças
              */
             function updateStartModeUI(count) {
                 selectedPieceCount = count;
@@ -1223,24 +1236,23 @@
 
                 hallCards = drawUniqueRoundWords(count);
                 sequenceSlots = new Array(count).fill(null);
-                hiddenErrors = 0;
+                errorCount = 0;
                 hintActive = false;
                 usedHintFlag = false;
                 dragSource = null;
                 selectedSource = null;
 
-                // Atualiza rótulos da interface de jogo para N peças
                 gameModeBadge.textContent = `Modo ${count} Peças`;
                 topbarInstruction.innerHTML = `Arraste as palavras do <strong>Hall</strong> para a <strong>Sequência (01 &rarr; ${paddedMax})</strong> em ordem alfabética pelo <strong>RADICAL</strong>.`;
                 sequenceZoneTitle.textContent = `SEQUÊNCIA ALFABÉTICA POR RADICAL (01 A ${paddedMax})`;
 
-                // Ajusta classe de colunas do grid conforme o tamanho da partida
                 sequenceGrid.classList.remove("grid-7", "grid-25");
                 if (count === 7) sequenceGrid.classList.add("grid-7");
                 if (count === 25) sequenceGrid.classList.add("grid-25");
 
                 errorBanner.classList.add("hidden");
                 hintBanner.classList.add("hidden");
+                sequenceZonePanel.classList.remove("sequence-panel-error");
 
                 screenStart.classList.add("hidden");
                 screenVictory.classList.add("hidden");
@@ -1251,7 +1263,7 @@
             }
 
             /**
-             * Volta para a tela inicial para trocar o modo (7, 15 ou 25 peças)
+             * Volta para a tela inicial
              */
             function returnToStartScreen() {
                 screenGame.classList.add("hidden");
@@ -1260,63 +1272,72 @@
             }
 
             /**
-             * Constrói o elemento visual de cada cartão de palavra
+             * Preenche o conteúdo textual/morfológico de uma palavra dentro de um contêiner
              */
-            function createWordCardElement(wordObj, zone, index, isInsideSlot = false) {
+            function populateWordDisplay(container, wordObj) {
+                if (!hintActive) {
+                    container.textContent = wordObj.word;
+                    return;
+                }
+
+                if (wordObj.prefix) {
+                    const preSpan = document.createElement("span");
+                    preSpan.className = "affix-prefix";
+                    preSpan.textContent = wordObj.prefix;
+                    container.appendChild(preSpan);
+                }
+
+                const rootSpan = document.createElement("span");
+                rootSpan.className = "affix-root";
+                rootSpan.textContent = wordObj.displayRoot;
+                container.appendChild(rootSpan);
+
+                if (wordObj.suffix) {
+                    const sufSpan = document.createElement("span");
+                    sufSpan.className = "affix-suffix";
+                    sufSpan.textContent = wordObj.suffix;
+                    container.appendChild(sufSpan);
+                }
+            }
+
+            /**
+             * Cria um cartão livre no Hall de Palavras
+             */
+            function createHallCardElement(wordObj, index) {
                 const card = document.createElement("div");
                 card.className = "word-card";
-                card.draggable = !isInsideSlot;
+                card.draggable = true;
 
                 if (
-                    !isInsideSlot &&
                     selectedSource &&
-                    selectedSource.zone === zone &&
+                    selectedSource.zone === "hall" &&
                     selectedSource.index === index
                 ) {
                     card.classList.add("is-selected");
                 }
 
-                if (!hintActive) {
-                    card.textContent = wordObj.word;
-                } else {
-                    wordObj.parts.forEach((part) => {
-                        const span = document.createElement("span");
-                        if (part.type === "prefix") {
-                            span.className = "affix-prefix";
-                        } else if (part.type === "suffix") {
-                            span.className = "affix-suffix";
-                        } else {
-                            span.className = "affix-root";
-                        }
-                        span.textContent = part.text;
-                        card.appendChild(span);
-                    });
-                }
+                populateWordDisplay(card, wordObj);
 
-                if (!isInsideSlot) {
-                    // HTML5 Drag & Drop para cartões livres no Hall
-                    card.addEventListener("dragstart", (e) => {
-                        dragSource = { zone, index };
-                        selectedSource = null;
-                        card.classList.add("is-dragging");
-                        if (e.dataTransfer) {
-                            e.dataTransfer.effectAllowed = "move";
-                            e.dataTransfer.setData("text/plain", `${zone}:${index}`);
-                        }
-                    });
+                card.addEventListener("dragstart", (e) => {
+                    dragSource = { zone: "hall", index };
+                    selectedSource = null;
+                    card.classList.add("is-dragging");
+                    if (e.dataTransfer) {
+                        e.dataTransfer.effectAllowed = "move";
+                        e.dataTransfer.setData("text/plain", `hall:${index}`);
+                    }
+                });
 
-                    card.addEventListener("dragend", () => {
-                        card.classList.remove("is-dragging");
-                        dragSource = null;
-                        clearAllDragHighlights();
-                    });
+                card.addEventListener("dragend", () => {
+                    card.classList.remove("is-dragging");
+                    dragSource = null;
+                    clearAllDragHighlights();
+                });
 
-                    // Clique para selecionar e posicionar (suporte fluido para touch/mobile)
-                    card.addEventListener("click", (e) => {
-                        e.stopPropagation();
-                        handleCardClick(zone, index);
-                    });
-                }
+                card.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    handleCardClick("hall", index);
+                });
 
                 return card;
             }
@@ -1329,7 +1350,7 @@
             }
 
             /**
-             * Seleção e movimentação por clique
+             * Lógica unificada de seleção/movimentação/troca por clique
              */
             function handleCardClick(zone, index) {
                 if (!selectedSource) {
@@ -1338,12 +1359,14 @@
                     return;
                 }
 
+                // Clicar na mesma peça desmarca a seleção
                 if (selectedSource.zone === zone && selectedSource.index === index) {
                     selectedSource = null;
                     renderWorkspace();
                     return;
                 }
 
+                // Se clicou em um slot da sequência (vazio ou ocupado), move ou troca
                 if (zone === "slot") {
                     const src = { ...selectedSource };
                     selectedSource = null;
@@ -1351,12 +1374,13 @@
                     return;
                 }
 
+                // Se clicou em outra peça do Hall, muda o foco da seleção para ela
                 selectedSource = { zone, index };
                 renderWorkspace();
             }
 
             /**
-             * Move ou troca uma peça para o targetSlotIndex
+             * Move uma peça do Hall ou troca posições entre dois slots da Sequência
              */
             function moveCardToSlot(source, targetSlotIndex) {
                 if (!source) return;
@@ -1382,6 +1406,7 @@
                 }
 
                 errorBanner.classList.add("hidden");
+                sequenceZonePanel.classList.remove("sequence-panel-error");
                 renderWorkspace();
                 evaluateSequenceIfFull();
             }
@@ -1397,11 +1422,12 @@
                 hallCards.push(card);
                 selectedSource = null;
                 errorBanner.classList.add("hidden");
+                sequenceZonePanel.classList.remove("sequence-panel-error");
                 renderWorkspace();
             }
 
             /**
-             * Renderiza o Hall de Palavras e os N slots da Sequência Alfabética
+             * Renderiza o Hall de Palavras e todos os N slots numerados (01 a N)
              */
             function renderWorkspace() {
                 const total = selectedPieceCount;
@@ -1417,23 +1443,43 @@
                     hallDropzone.appendChild(emptyMsg);
                 } else {
                     hallCards.forEach((wordObj, idx) => {
-                        const cardEl = createWordCardElement(wordObj, "hall", idx);
+                        const cardEl = createHallCardElement(wordObj, idx);
                         hallDropzone.appendChild(cardEl);
                     });
                 }
 
-                // 2. Sequência Alfabética (01 a N)
+                // 2. Sequência Alfabética (01 a N) — Número do slot SEMPRE visível
                 sequenceGrid.innerHTML = "";
                 let placedCount = 0;
 
                 for (let i = 0; i < total; i++) {
                     const slotEl = document.createElement("div");
                     slotEl.className = "seq-slot";
+
+                    // Badge numerado (01, 02, 03...) sempre criado e mantido à esquerda
+                    const numBadge = document.createElement("span");
+                    numBadge.className = "slot-number";
+                    numBadge.textContent = String(i + 1).padStart(2, "0");
+                    slotEl.appendChild(numBadge);
+
                     const wordObj = sequenceSlots[i];
 
                     if (wordObj !== null) {
-                        const cardEl = createWordCardElement(wordObj, "slot", i, true);
-                        slotEl.appendChild(cardEl);
+                        placedCount++;
+                        slotEl.classList.add("has-card");
+
+                        if (
+                            selectedSource &&
+                            selectedSource.zone === "slot" &&
+                            selectedSource.index === i
+                        ) {
+                            slotEl.classList.add("is-selected-slot");
+                        }
+
+                        const wordContent = document.createElement("div");
+                        wordContent.className = "slot-word-content";
+                        populateWordDisplay(wordContent, wordObj);
+                        slotEl.appendChild(wordContent);
 
                         // Torna o bloco INTEIRO do slot ocupado arrastável (inclusive o número)
                         slotEl.draggable = true;
@@ -1460,6 +1506,7 @@
                         slotEl.appendChild(placeholder);
                     }
 
+                    // Eventos de Drop no slot (aceita peças do Hall ou troca com outro slot)
                     slotEl.addEventListener("dragover", (e) => {
                         e.preventDefault();
                         if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
@@ -1480,6 +1527,7 @@
                         }
                     });
 
+                    // Clique no bloco inteiro do slot
                     slotEl.addEventListener("click", (e) => {
                         e.stopPropagation();
                         if (wordObj !== null) {
@@ -1498,7 +1546,7 @@
             }
 
             /**
-             * Valida automaticamente assim que todos os N slots estiverem ocupados
+             * Valida automaticamente assim que todos os N slots estiverem preenchidos
              */
             function evaluateSequenceIfFull() {
                 const isFull = sequenceSlots.every((item) => item !== null);
@@ -1519,16 +1567,17 @@
                     return;
                 }
 
-                // Ordem incorreta: incrementa contagem oculta e aciona alerta visual sem apontar qual peça errou
-                hiddenErrors++;
+                // Ordem incorreta: incrementa contagem oculta e aciona feedback visual
+                errorCount++;
                 errorBanner.classList.remove("hidden");
+                sequenceZonePanel.classList.add("sequence-panel-error");
 
                 workspaceContainer.classList.remove("shake-board");
                 void workspaceContainer.offsetWidth;
                 workspaceContainer.classList.add("shake-board");
 
-                // Após 3 tentativas erradas, ativa dica visual e marca a FLAG
-                if (hiddenErrors >= 3 && !hintActive) {
+                // Após 3 erros, ativa dica visual colorida e registra a FLAG
+                if (errorCount >= 3 && !hintActive) {
                     hintActive = true;
                     usedHintFlag = true;
                     hintBanner.classList.remove("hidden");
@@ -1537,20 +1586,17 @@
             }
 
             /**
-             * Formata duração (ex.: 01m 24s ou 38.4s)
+             * Formata duração no padrão MM:SS
              */
-            function formatDuration(ms) {
-                const totalSeconds = Math.max(0, ms / 1000);
-                if (totalSeconds < 60) {
-                    return `${totalSeconds.toFixed(1)}s`;
-                }
+            function formatTimeMMSS(ms) {
+                const totalSeconds = Math.max(0, Math.floor(ms / 1000));
                 const minutes = Math.floor(totalSeconds / 60);
-                const seconds = Math.floor(totalSeconds % 60);
-                return `${String(minutes).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`;
+                const seconds = totalSeconds % 60;
+                return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
             }
 
             /**
-             * Exibe a Tela Final de Parabéns
+             * Exibe a Tela Final de Vitória
              */
             function showVictoryScreen() {
                 const elapsedMs = performance.now() - roundStartTime;
@@ -1563,7 +1609,7 @@
                 document.getElementById("victory-subtitle").textContent =
                     `Todas as ${count} palavras foram ordenadas corretamente a partir de seus radicais.`;
                 document.getElementById("victory-mode").textContent = `${count} PEÇAS`;
-                document.getElementById("victory-time").textContent = formatDuration(elapsedMs);
+                document.getElementById("victory-time").textContent = formatTimeMMSS(elapsedMs);
                 document.getElementById("victory-table-heading").innerHTML =
                     `📋 DECOMPOSIÇÃO MORFOLÓGICA DA RODADA (01 &rarr; ${paddedMax})`;
 
@@ -1583,11 +1629,11 @@
                 if (usedHintFlag) {
                     flagCard.style.backgroundColor = "var(--comic-red)";
                     flagCard.style.color = "#FFFFFF";
-                    badgeDiv.innerHTML = `<span style="background:#FFD60A;color:#111111;border:2px solid #111111;padding:4px 12px;border-radius:999px;display:inline-block;margin-bottom:4px;">🚩 FLAG: DICA DE AFIXOS ATIVADA</span><br><span style="font-size:0.82rem;">Dica visual acionada após 3 erros ocultos</span>`;
+                    badgeDiv.innerHTML = `<span style="background:#FFD60A;color:#111111;border:2px solid #111111;padding:4px 12px;border-radius:999px;display:inline-block;margin-bottom:4px;">🚩 FLAG: DICA DE AFIXOS ATIVADA</span><br><span style="font-size:0.82rem;">Dica visual acionada após 3 erros</span>`;
                 } else {
                     flagCard.style.backgroundColor = "var(--comic-blue)";
                     flagCard.style.color = "#FFFFFF";
-                    badgeDiv.innerHTML = `<span style="background:#2EC4B6;color:#111111;border:2px solid #111111;padding:4px 12px;border-radius:999px;display:inline-block;margin-bottom:4px;">🏆 CLEAN RUN! SEM DICAS</span><br><span style="font-size:0.82rem;">Concluído sem acionar dicas!</span>`;
+                    badgeDiv.innerHTML = `<span style="background:#2EC4B6;color:#111111;border:2px solid #111111;padding:4px 12px;border-radius:999px;display:inline-block;margin-bottom:4px;">🏆 SEM DICAS (LIMPO)</span><br><span style="font-size:0.82rem;">Concluído sem acionar dicas!</span>`;
                 }
                 flagCard.appendChild(badgeDiv);
 
@@ -1608,19 +1654,18 @@
                     tr.appendChild(tdWord);
 
                     const tdBreakdown = document.createElement("td");
-                    item.parts.forEach((part, pIdx) => {
+                    const pieces = [];
+                    if (item.prefix) pieces.push({ text: item.prefix, cls: "affix-prefix" });
+                    pieces.push({ text: item.displayRoot, cls: "affix-root" });
+                    if (item.suffix) pieces.push({ text: item.suffix, cls: "affix-suffix" });
+
+                    pieces.forEach((p, pIdx) => {
                         if (pIdx > 0) {
                             tdBreakdown.appendChild(document.createTextNode(" + "));
                         }
                         const span = document.createElement("span");
-                        if (part.type === "prefix") {
-                            span.className = "affix-prefix";
-                        } else if (part.type === "suffix") {
-                            span.className = "affix-suffix";
-                        } else {
-                            span.className = "affix-root";
-                        }
-                        span.textContent = part.text;
+                        span.className = p.cls;
+                        span.textContent = p.text;
                         tdBreakdown.appendChild(span);
                     });
                     tr.appendChild(tdBreakdown);
@@ -1673,7 +1718,7 @@
             // Botões de Navegação
             document.getElementById("btn-play").addEventListener("click", startNewRound);
             document.getElementById("btn-back-start").addEventListener("click", returnToStartScreen);
-            document.getElementById("btn-new-round").addEventListener("click", startNewRound);
+            document.getElementById("btn-new-round").addEventListener("click", returnToStartScreen);
         })();
     </script>
 </body>
